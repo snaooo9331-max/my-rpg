@@ -11,3 +11,18 @@ body {
   height: 64px;
   image-rendering: pixelated;
 }
+
+.hidden {
+  display: none;
+}
+
+button {
+  font-size: 18px;
+  padding: 12px 24px;
+  margin: 8px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f5a623;
+  color: #1e1e2e;
+  cursor: pointer;
+}
