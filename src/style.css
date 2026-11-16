@@ -26,3 +26,33 @@ button {
   color: #1e1e2e;
   cursor: pointer;
 }
+
+.map {
+  position: relative;
+  margin: 16px auto 0;
+}
+
+.tile {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.hero {
+  transition: left 0.1s, top 0.1s;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-auto-rows: 56px;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.dpad button {
+  margin: 0;
+  padding: 0;
+}
