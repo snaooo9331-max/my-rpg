@@ -1,6 +1,8 @@
 import { getScene } from "./scene";
 import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
+import { player } from "./player";
+import { MONSTERS } from "./monster";
 
 const TILE_SIZE = 32;
 
@@ -29,13 +31,14 @@ type FieldEnemy = {
   id: number;
   x: number;
   y: number;
+  monsterId: string;
   alive: boolean; 
 };
 
 const fieldEnemies: FieldEnemy[] = [
-  { id: 1, x: 6, y: 3, alive: true },
-  { id: 2, x: 3, y: 5, alive: true },
-  { id: 3, x: 8, y: 1, alive: true },
+  { id: 1, x: 6, y: 3, monsterId: "mushroom", alive: true },
+  { id: 2, x: 3, y: 5, monsterId: "poisonMushroom", alive: true },
+  { id: 3, x: 8, y: 1, monsterId: "mushroom", alive: true },
 ];
 
 function checkEncounter(prevX: number, prevY: number) {
@@ -46,14 +49,23 @@ function checkEncounter(prevX: number, prevY: number) {
     return;
   }
 
-  startBattle(() => {
-    enemy.alive = false;
-    document.getElementById("enemy-" + enemy.id)?.remove();
-  },
-  () => {
-    heroX = prevX;
-    heroY = prevY;
-    drawHero();
+  startBattle({
+    monsterId: enemy.monsterId,
+    onWin: () => {
+      enemy.alive = false;
+      document.getElementById("enemy-" + enemy.id)?.remove();
+    },
+    onEscape: () => {
+      heroX = prevX;
+      heroY = prevY;
+      drawHero();
+    },
+    onLose: () => {
+      heroX = 2;
+      heroY = 2;
+      player.hp = player.maxHp;
+      drawHero();
+    },
   });
 }
 
@@ -118,7 +130,7 @@ export function setupField(root: HTMLElement) {
 
   fieldEnemies.forEach((enemy) => {
     const img = document.createElement("img");
-    img.src = "assets/mushroom.png";
+    img.src = "assets/" + MONSTERS[enemy.monsterId].image + ".png";
     img.id = "enemy-" + enemy.id;
     img.className = "tile";
     img.style.left = enemy.x * TILE_SIZE + "px";

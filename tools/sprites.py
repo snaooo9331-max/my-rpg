@@ -31,6 +31,9 @@ PALETTE = {
     'd': (176, 140, 90, 255),   # 道の影
     'C': (236, 224, 200, 255),  # クリーム（キノコの柄）
     'c': (200, 184, 156, 255),  # クリームの影
+    'V': (128, 62, 168, 255),   # 紫（毒キノコのかさ）
+    'v': (82, 36, 112, 255),    # 紫の影
+    'N': (176, 226, 92, 255),   # 毒々しい黄緑（斑点）
 }
 
 SPRITES = {
@@ -138,6 +141,24 @@ SPRITES = {
         "...KCCCCCCCCK...",
         "...KCKKCCKKCK...",
         "...KCCKCCKCCK...",
+        "...KCCCCCCCcK...",
+        "...KKCccccccKK..",
+        "..KKKKK..KKKKK..",
+    ],
+    "poison_mushroom": [
+        "................",
+        ".....KKKKKK.....",
+        "...KKVVVVVVKK...",
+        "..KVVNNVVVVVVK..",
+        ".KVVNNNVVVNNVVK.",
+        ".KVVVNVVVVNNVVK.",
+        "KVVVVVVVVVVVVvvK",
+        "KvVVVNNVVVVVvvvK",
+        "KvvvvvvvvvvvvvvK",
+        ".KKKKKKKKKKKKKK.",
+        "...KCKCCCCKCK...",
+        "...KCCKCCKCCK...",
+        "...KCKKCCKKCK...",
         "...KCCCCCCCcK...",
         "...KKCccccccKK..",
         "..KKKKK..KKKKK..",
