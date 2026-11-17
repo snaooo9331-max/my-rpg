@@ -1,5 +1,6 @@
-import { changeScene, getScene } from "./scene";
+import { getScene } from "./scene";
 import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
+import { startBattle } from "./battle";
 
 const TILE_SIZE = 32;
 
@@ -24,6 +25,38 @@ const KEY_TO_DIRECTION: Record<string, string> = {
 let heroX = 2;
 let heroY = 2;
 
+type FieldEnemy = {
+  id: number;
+  x: number;
+  y: number;
+  alive: boolean; 
+};
+
+const fieldEnemies: FieldEnemy[] = [
+  { id: 1, x: 6, y: 3, alive: true },
+  { id: 2, x: 3, y: 5, alive: true },
+  { id: 3, x: 8, y: 1, alive: true },
+];
+
+function checkEncounter(prevX: number, prevY: number) {
+  const enemy = fieldEnemies.find(
+    (e) => e.alive && e.x === heroX && e.y === heroY
+  );
+  if (!enemy) {
+    return;
+  }
+
+  startBattle(() => {
+    enemy.alive = false;
+    document.getElementById("enemy-" + enemy.id)?.remove();
+  },
+  () => {
+    heroX = prevX;
+    heroY = prevY;
+    drawHero();
+  });
+}
+
 function drawHero() {
   const hero = document.getElementById("hero");
   if (hero) {
@@ -42,9 +75,12 @@ function moveHero(direction: string) {
   const nextY = heroY + delta[1];
 
   if (isWalkable(nextX, nextY)) {
+    const prevX = heroX;
+    const prevY = heroY;
     heroX = nextX;
     heroY = nextY;
     drawHero();
+    checkEncounter(prevX, prevY);
   }
 }
 
@@ -59,7 +95,6 @@ export function setupField(root: HTMLElement) {
       <button data-dir="down">▼</button>
       <button data-dir="right">▶</button>
     </div>
-    <button id="encounter-button">敵に出会う（仮）</button>
   `;
 
   const map = root.querySelector<HTMLDivElement>("#map");
@@ -80,6 +115,16 @@ export function setupField(root: HTMLElement) {
       map.appendChild(tile);
     }
   }
+
+  fieldEnemies.forEach((enemy) => {
+    const img = document.createElement("img");
+    img.src = "assets/mushroom.png";
+    img.id = "enemy-" + enemy.id;
+    img.className = "tile";
+    img.style.left = enemy.x * TILE_SIZE + "px";
+    img.style.top = enemy.y * TILE_SIZE + "px";
+    map.appendChild(img);
+  });
 
   const hero = document.createElement("img");
   hero.src = "assets/hero.png";
@@ -103,9 +148,5 @@ export function setupField(root: HTMLElement) {
       event.preventDefault();
       moveHero(direction);
     }
-  });
-
-  root.querySelector("#encounter-button")?.addEventListener("click", () => {
-    changeScene("battle");
   });
 }
