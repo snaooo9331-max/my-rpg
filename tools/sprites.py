@@ -55,6 +55,42 @@ SPRITES = {
         "....KLLKKLLK....",
         "....KKKK.KKKK...",
     ],
+    "hero_up": [
+        "................",
+        ".....KKKKKK.....",
+        "....KHHHHHHK....",
+        "...KHhHHHHhHK...",
+        "...KHHHHHHHHK...",
+        "...KHHHHHHHHK...",
+        "...KHHHHHHHHK...",
+        "....KKHHHHKK....",
+        "...KRRRRRRRRK...",
+        ".WKSRRRRRRRRSK..",
+        ".WKSRRRrRRRRSK..",
+        "..WKRRRrRRRRK...",
+        "...KRPPKKPPRK...",
+        "....KPPKKPPK....",
+        "....KLLKKLLK....",
+        "....KKKK.KKKK...",
+    ],
+    "hero_left": [
+        "................",
+        "......KKKKKK....",
+        ".....KHHHHHHK...",
+        "....KHhHHHHHHK..",
+        "....KSSSHHHHHK..",
+        "...KSKSSSHHHK...",
+        "...KSSSSSHHK....",
+        "....KKSSSKK.....",
+        "....KBBBBRRK....",
+        "...KSBBBBRRRK...",
+        "..WKSBBbBRRRK...",
+        "...KLLLLLRRK....",
+        "....KPPKPPRK....",
+        "....KPPKPPK.....",
+        "...KLLKLLLK.....",
+        "...KKKKKKKK.....",
+    ],
     "grass": [
         "GGGGGGGGGGGGGGGG",
         "GGGGGGGGGGFGGGGG",
@@ -166,6 +202,9 @@ SPRITES = {
 }
 
 
+MIRRORS = {"hero_right": "hero_left"}
+
+
 def build(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     for name, rows in SPRITES.items():
@@ -175,6 +214,10 @@ def build(out_dir: Path) -> None:
             for x, ch in enumerate(row):
                 img.putpixel((x, y), PALETTE[ch])
         img.save(out_dir / f"{name}.png")
+    # 右向きは左向きを左右反転して作る
+    for name, source in MIRRORS.items():
+        img = Image.open(out_dir / f"{source}.png")
+        img.transpose(Image.FLIP_LEFT_RIGHT).save(out_dir / f"{name}.png")
 
 
 if __name__ == "__main__":

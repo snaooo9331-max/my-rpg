@@ -24,6 +24,13 @@ const KEY_TO_DIRECTION: Record<string, string> = {
   d: "right",
 };
 
+const HERO_IMAGES: Record<string, string> = {
+  down: "hero",
+  up: "hero_up",
+  left: "hero_left",
+  right: "hero_right",
+};
+
 let heroX = 2;
 let heroY = 2;
 
@@ -49,14 +56,17 @@ function updateFieldStatus() {
   }
 }
 
-function respawnIfAllDefeated() {
-  if (fieldEnemies.some((e) => e.alive)) {
-    return;
-  }
-  fieldEnemies.forEach((e) => {
-    e.alive = true;
-    document.getElementById("enemy-" + e.id)?.classList.remove("hidden");
-  })
+const RESPAWN_MS = 3000;
+
+function scheduleRespawn(enemy: FieldEnemy) {
+  setTimeout(() => {
+    if (enemy.x === heroX && enemy.y === heroY) {
+      scheduleRespawn(enemy);
+      return;
+    }
+    enemy.alive = true;
+    document.getElementById("enemy-" + enemy.id)?.classList.remove("hidden");
+  }, RESPAWN_MS);
 }
 
 function checkEncounter(prevX: number, prevY: number) {
@@ -72,7 +82,7 @@ function checkEncounter(prevX: number, prevY: number) {
     onWin: () => {
       enemy.alive = false;
       document.getElementById("enemy-" + enemy.id)?.classList.add("hidden");
-      respawnIfAllDefeated();
+      scheduleRespawn(enemy);
       updateFieldStatus();
     },
     onEscape: () => {
@@ -99,11 +109,21 @@ function drawHero() {
   }
 }
 
+function turnHero(direction: string) {
+  const hero = document.getElementById("hero") as HTMLImageElement | null;
+  const image = HERO_IMAGES[direction];
+  if (hero && image) {
+    hero.src = "assets/" + image + ".png";
+  }
+}
+
 function moveHero(direction: string) {
   const delta = DIRECTIONS[direction];
   if (!delta) {
     return;
   }
+
+  turnHero(direction);
 
   const nextX = heroX + delta[0];
   const nextY = heroY + delta[1];
