@@ -1,7 +1,7 @@
 import { getScene } from "./scene";
 import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
-import { player } from "./player";
+import { player, expToNext } from "./player";
 import { MONSTERS } from "./monster";
 
 const TILE_SIZE = 32;
@@ -41,6 +41,24 @@ const fieldEnemies: FieldEnemy[] = [
   { id: 3, x: 8, y: 1, monsterId: "mushroom", alive: true },
 ];
 
+function updateFieldStatus() {
+  const status = document.getElementById("field-status");
+  if (status) {
+    const next = expToNext(player.level) - player.exp;
+    status.textContent = `Lv${player.level} HP ${player.hp} / ${player.maxHp} ${player.gold}G SP ${player.skillPoints} 次のレベルまで ${next} `;
+  }
+}
+
+function respawnIfAllDefeated() {
+  if (fieldEnemies.some((e) => e.alive)) {
+    return;
+  }
+  fieldEnemies.forEach((e) => {
+    e.alive = true;
+    document.getElementById("enemy-" + e.id)?.classList.remove("hidden");
+  })
+}
+
 function checkEncounter(prevX: number, prevY: number) {
   const enemy = fieldEnemies.find(
     (e) => e.alive && e.x === heroX && e.y === heroY
@@ -53,18 +71,22 @@ function checkEncounter(prevX: number, prevY: number) {
     monsterId: enemy.monsterId,
     onWin: () => {
       enemy.alive = false;
-      document.getElementById("enemy-" + enemy.id)?.remove();
+      document.getElementById("enemy-" + enemy.id)?.classList.add("hidden");
+      respawnIfAllDefeated();
+      updateFieldStatus();
     },
     onEscape: () => {
       heroX = prevX;
       heroY = prevY;
       drawHero();
+      updateFieldStatus();
     },
     onLose: () => {
       heroX = 2;
       heroY = 2;
       player.hp = player.maxHp;
       drawHero();
+      updateFieldStatus();
     },
   });
 }
@@ -98,6 +120,7 @@ function moveHero(direction: string) {
 
 export function setupField(root: HTMLElement) {
   root.innerHTML = `
+    <p id="field-status" class="status"></p>
     <div class="map" id="map"></div>
     <div class="dpad">
       <span></span>
@@ -161,4 +184,6 @@ export function setupField(root: HTMLElement) {
       moveHero(direction);
     }
   });
+
+  updateFieldStatus();
 }

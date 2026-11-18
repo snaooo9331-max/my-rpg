@@ -71,3 +71,18 @@ button {
   min-height: 3em;
   padding: 0 16px;
 }
+
+#auto-button {
+  background-color: #444455;
+  color: #ffffff;
+}
+
+#auto-button.auto-on {
+  background-color: #4caf50;
+  color: #ffffff;
+}
+
+.status {
+  font-size: 14px;
+  margin: 8px 0;
+}

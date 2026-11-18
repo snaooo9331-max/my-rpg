@@ -1,5 +1,5 @@
 import { changeScene } from "./scene";
-import { player } from "./player";
+import { player, gainExp } from "./player";
 import { MONSTERS, type MonsterData } from "./monster";
 
 type BattleOptions = {
@@ -14,6 +14,8 @@ let options: BattleOptions | null = null;
 let enemy: MonsterData = MONSTERS.mushroom;
 let enemyHp = 0;
 let busy = false;
+let autoMode = false;
+let inBattle = false;
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,6 +24,30 @@ function wait(ms: number): Promise<void> {
 function calcDamage(attack: number, defense: number): number {
   const random = Math.floor(Math.random() * 3) - 1;
   return Math.max(1, attack - defense + random);
+}
+
+async function scheduleAuto() {
+  if (!autoMode) {
+    return;
+  }
+  await wait(600);
+  if (autoMode && inBattle && !busy) {
+    attack();
+  }
+}
+
+function updateAutoButton() {
+  const button = battleRoot?.querySelector("#auto-button");
+  if (button) {
+    button.textContent = autoMode ? "オート：ON" : "オート：OFF";
+    button.classList.toggle("auto-on", autoMode);
+  }
+}
+
+function toggleAuto() {
+  autoMode = !autoMode;
+  updateAutoButton();
+  scheduleAuto();
 }
 
 function setText(id: string, text: string) {
@@ -33,7 +59,7 @@ function setText(id: string, text: string) {
 
 function updateStatus() {
   setText("enemy-status", `${enemy.name} HP ${enemyHp} / ${enemy.maxHp}`);
-  setText("player-status", `${player.name} HP ${player.hp} / ${player.maxHp}`);
+  setText("player-status", `${player.name} Lv${player.level} HP ${player.hp} / ${player.maxHp}`);
 }
 
 export function startBattle(BattleOptions: BattleOptions) {
@@ -41,6 +67,7 @@ export function startBattle(BattleOptions: BattleOptions) {
   enemy = MONSTERS[BattleOptions.monsterId] ?? MONSTERS.mushroom;
   enemyHp = enemy.maxHp;
   busy = false;
+  inBattle = true;
 
   const image = battleRoot?.querySelector<HTMLImageElement>("#battle-enemy-image");
   if (image) {
@@ -50,6 +77,7 @@ export function startBattle(BattleOptions: BattleOptions) {
   updateStatus();
   setText("battle-log", `${enemy.name}があらわれた！`);
   changeScene("battle");
+  scheduleAuto();
 }
 
 async function enemyTurn(): Promise<boolean> {
@@ -60,6 +88,7 @@ async function enemyTurn(): Promise<boolean> {
   updateStatus();
 
   if (player.hp <= 0) {
+    inBattle = false;
     await wait(1000);
     setText("battle-log", `${player.name}はたおれてしまった...`);
     await wait(1500);
@@ -82,9 +111,20 @@ async function attack() {
   updateStatus();
 
   if ( enemyHp <= 0) {
+    inBattle = false;
     await wait(1000);
     setText("battle-log", `${enemy.name}をたおした！`);
     await wait(1000);
+
+    player.gold += enemy.gold;
+    setText("battle.log", `${enemy.exp} のけいけんちと ${enemy.gold} ゴールドをてにいれた！`);
+    const levelUps = gainExp(enemy.exp);
+    for (const message of levelUps) {
+      await wait(1200);
+      setText("battle-log", message);
+      updateStatus();
+    }
+    await wait(1200);
     options?.onWin();
     changeScene("field");
     return;
@@ -92,6 +132,7 @@ async function attack() {
 
   if (await enemyTurn()) {
     busy = false;
+    scheduleAuto();
   }
 }
 
@@ -105,10 +146,12 @@ async function run() {
     setText("battle-log", "にげられなかった！");
     if (await enemyTurn()) {
       busy = false;
+      scheduleAuto();
     }
     return;
   }
 
+  inBattle = false;
   setText("battle-log", "うまくにげきれた！");
   await wait(800);
   options?.onEscape();
@@ -126,9 +169,12 @@ export function setupBattle(root: HTMLElement) {
     <div class="commands">
       <button id="attack-button">たたかう</button>
       <button id="run-button">にげる</button>
+      <button id="auto-button">オート：OFF</button>
     </div>
   `;
 
   root.querySelector("#attack-button")?.addEventListener("click", attack);
   root.querySelector("#run-button")?.addEventListener("click", run);
+  root.querySelector("#auto-button")?.addEventListener("click", toggleAuto);
+  updateAutoButton();
 }

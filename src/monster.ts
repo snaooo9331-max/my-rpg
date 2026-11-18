@@ -4,6 +4,8 @@ export type MonsterData = {
     maxHp: number;
     attack: number;
     defense: number;
+    exp: number;
+    gold: number;
 };
 
 export const MONSTERS: Record<string, MonsterData> = {
@@ -13,6 +15,8 @@ export const MONSTERS: Record<string, MonsterData> = {
         maxHp: 15,
         attack: 5,
         defense: 1,
+        exp: 3,
+        gold: 5,
     },
     poisonMushroom: {
         name: "毒キノコ",
@@ -20,5 +24,7 @@ export const MONSTERS: Record<string, MonsterData> = {
         maxHp: 25,
         attack: 7,
         defense: 3,
+        exp: 8,
+        gold: 12,
     },
 };
