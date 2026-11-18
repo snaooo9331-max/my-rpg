@@ -110,3 +110,17 @@ button:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
+.message {
+  min-height: 1.5em;
+  color: #f5a623;
+  font-size: 14px;
+  padding: 0 16px;
+}
+
+.danger {
+  background-color: #444455;
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-top: 32px;
+}

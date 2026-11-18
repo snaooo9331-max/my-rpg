@@ -1,12 +1,16 @@
 import "./style.css";
-import { setupField } from "./field";
+import { setupField, updateFieldStatus, showFieldMessage } from "./field";
 import { setupBattle } from "./battle";
 import { changeScene } from "./scene";
 import { setupMenu } from "./menu";
+import { loadGame, saveGame, startAutoSave } from "./save";
+import { giveOfflineReward } from "./offline";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
 if (app) {
+  const lastSaveTime = loadGame();
+
   app.innerHTML = `
     <h1>My RPG</h1>
     <div id="field-screen"></div>
@@ -25,4 +29,15 @@ if (app) {
   }
 
   changeScene("field");
+
+  if (lastSaveTime !== null) {
+    const report = giveOfflineReward(lastSaveTime);
+    if (report) {
+      saveGame();
+      updateFieldStatus();
+      showFieldMessage(report);
+    }
+  }
+
+  startAutoSave();
 }

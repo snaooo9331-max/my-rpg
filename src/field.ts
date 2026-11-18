@@ -49,11 +49,21 @@ const fieldEnemies: FieldEnemy[] = [
   { id: 3, x: 8, y: 1, monsterId: "mushroom", alive: true },
 ];
 
-function updateFieldStatus() {
+export function updateFieldStatus() {
   const status = document.getElementById("field-status");
   if (status) {
     const next = expToNext(player.level) - player.exp;
     status.textContent = `Lv${player.level} HP ${player.hp} / ${player.maxHp} ${player.gold}G SP ${player.skillPoints} 次のレベルまで ${next} `;
+  }
+}
+
+export function showFieldMessage(text: string) {
+  const element = document.getElementById("field-message");
+  if (element) {
+    element.textContent = text;
+    setTimeout(() => {
+      element.textContent = "";
+    }, 6000);
   }
 }
 
@@ -142,6 +152,7 @@ function moveHero(direction: string) {
 export function setupField(root: HTMLElement) {
   root.innerHTML = `
     <p id="field-status" class="status"></p>
+    <p id="field-message" class="message"></p>
     <div class="map" id="map"></div>
     <div class="dpad">
       <span></span>

@@ -2,6 +2,7 @@ import { changeScene } from "./scene";
 import { player, getAttack, getDefense } from "./player";
 import { ITEMS, type ItemData } from "./items"; 
 import { SKILL_UPGRADES, STAT_LABELS } from "./skills";
+import { deleteSave } from "./save";
 
 let menuRoot: HTMLElement | null = null;
 let onClose: (() => void) | null = null;
@@ -104,6 +105,9 @@ function renderMenu() {
     <ul class="item-list">${skillRows}</ul>
     <p class="status">${message}</p>
     <button id="close-menu">とじる</button>
+    <div>
+      <button id="delete-save" class="danger">データを消す</button>
+    </div>
   `;
 
   menuRoot.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((button) => {
@@ -116,7 +120,15 @@ function renderMenu() {
     changeScene("field");
     onClose?.();
   });
+  
+  menuRoot.querySelector("#delete-save")?.addEventListener("click", () => {
+    if (confirm("本当にデータを消しますか")) {
+      deleteSave();
+      location.reload();
+    }
+  });
 }
+
 
 export function openMenu(closeCallback: () => void) {
   onClose = closeCallback;
