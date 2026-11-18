@@ -1,6 +1,7 @@
 import { changeScene } from "./scene";
 import { player, getAttack, getDefense } from "./player";
 import { ITEMS, type ItemData } from "./items"; 
+import { SKILL_UPGRADES, STAT_LABELS } from "./skills";
 
 let menuRoot: HTMLElement | null = null;
 let onClose: (() => void) | null = null;
@@ -24,7 +25,29 @@ function itemButton(item: ItemData): string {
   return `<button data-action="buy" data-id="${item.id}">買う ${item.price}G</button>`;
 }
 
+function useSkillPoint(id: string) {
+  const upgrade = SKILL_UPGRADES.find((s) => s.id === id);
+  if (!upgrade || player.skillPoints <= 0) {
+    return;
+  }
+
+  player.skillPoints -= 1;
+  player[upgrade.stat] += upgrade.amount;
+
+  if (upgrade.stat === "maxHp") {
+    player.hp += upgrade.amount;
+  }
+
+  message = `${STAT_LABELS[upgrade.stat]}が ${upgrade.amount}上がった！`;
+}
+
 function handleItem(action: string, id: string) {
+  if (action === "skill") {
+    useSkillPoint(id);
+    renderMenu();
+    return;
+  }
+
   const item = ITEMS.find((i) => i.id === id);
   if (!item) {
     return;
@@ -64,12 +87,21 @@ function renderMenu() {
     </li>
   `).join("");
 
+  const skillRows = SKILL_UPGRADES.map((s) => `
+    <li class="item-row">
+      <span>${s.name} (${STAT_LABELS[s.stat]} + ${s.amount}) </span>
+      <button data-action="skill" data-id="${s.id}" ${player.skillPoints <= 0 ? "disabled" : ""}>SPを使う</button>
+    </li>
+  `).join("");
+
   menuRoot.innerHTML = `
     <h2>メニュー</h2>
     <p class="status">Lv${player.level} HP ${player.hp}/${player.maxHp}  ${player.gold}G</p>
     <p class="status">攻撃力 ${getAttack()} 守備力 ${getDefense()}</p>
     <h3>装備</h3>
     <ul class="item-list">${rows}</ul>
+    <h3>スキルポイント（のこり ${player.skillPoints}）</h3>
+    <ul class="item-list">${skillRows}</ul>
     <p class="status">${message}</p>
     <button id="close-menu">とじる</button>
   `;
