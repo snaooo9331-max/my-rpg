@@ -1,3 +1,5 @@
+import { findItem } from "./items";
+
 export type Character = {
     name: string;
     level: number;
@@ -8,6 +10,9 @@ export type Character = {
     defense: number;
     gold: number;
     skillPoints: number;
+    weapon: string | null;
+    armor: string | null;
+    ownedItems: string[];
 };
 
 export const player: Character = {
@@ -20,6 +25,9 @@ export const player: Character = {
     defense: 3,
     gold: 0,
     skillPoints: 0,
+    weapon: null,
+    armor: null,
+    ownedItems: [],
 };
 
 export function expToNext(level: number): number {
@@ -42,4 +50,16 @@ export function gainExp(amount: number): string[] {
     }
 
     return messages;
+}
+
+export function getAttack(): number {
+    const weapon = findItem(player.weapon);
+    const armor = findItem(player.armor);
+    return player.attack + (weapon?.attack ?? 0) + (armor?.attack ?? 0);
+}
+
+export function getDefense(): number {
+    const weapon = findItem(player.weapon);
+    const armor = findItem(player.armor);
+    return player.defense + (weapon?.defense ?? 0) + (armor?.defense ?? 0);
 }

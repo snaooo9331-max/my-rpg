@@ -1,4 +1,6 @@
-export type Scene = "field" | "battle";
+export type Scene = "field" | "battle" | "menu";
+
+const SCENES: Scene[] = ["field", "battle", "menu"];
 
 let currentScene: Scene = "field";
 
@@ -8,7 +10,7 @@ export function getScene(): Scene {
 
 export function changeScene(next: Scene) {
   currentScene = next;
-
-  document.getElementById("field-screen")?.classList.toggle("hidden", next !== "field");
-  document.getElementById("battle-screen")?.classList.toggle("hidden", next !== "battle");
+  SCENES.forEach((scene) => {
+    document.getElementById(scene + "-screen")?.classList.toggle("hidden", scene !== next);
+  });
 }

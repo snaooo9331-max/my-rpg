@@ -1,5 +1,5 @@
 import { changeScene } from "./scene";
-import { player, gainExp } from "./player";
+import { player, gainExp, getAttack, getDefense} from "./player";
 import { MONSTERS, type MonsterData } from "./monster";
 
 type BattleOptions = {
@@ -82,7 +82,7 @@ export function startBattle(BattleOptions: BattleOptions) {
 
 async function enemyTurn(): Promise<boolean> {
   await wait(800);
-  const damage = calcDamage(enemy.attack, player.defense);
+  const damage = calcDamage(enemy.attack, getDefense());
   player.hp = Math.max(0, player.hp - damage);
   setText("battle-log", `${enemy.name}のこうげき！ ${player.name}は ${damage}のダメージをうけた！`);
   updateStatus();
@@ -105,7 +105,7 @@ async function attack() {
   }
   busy = true;
 
-  const damage = calcDamage(player.attack, enemy.defense);
+  const damage = calcDamage(getAttack(), enemy.defense);
   enemyHp = Math.max(0, enemyHp - damage);
   setText("battle-log", `${player.name}のこうげき！ ${enemy.name}に${damage}のダメージ！`);
   updateStatus();

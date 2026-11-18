@@ -3,6 +3,7 @@ import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
 import { player, expToNext } from "./player";
 import { MONSTERS } from "./monster";
+import { openMenu } from "./menu";
 
 const TILE_SIZE = 32;
 
@@ -150,6 +151,7 @@ export function setupField(root: HTMLElement) {
       <button data-dir="down">▼</button>
       <button data-dir="right">▶</button>
     </div>
+    <button id="menu-button">メニュー</button>
   `;
 
   const map = root.querySelector<HTMLDivElement>("#map");
@@ -203,6 +205,12 @@ export function setupField(root: HTMLElement) {
       event.preventDefault();
       moveHero(direction);
     }
+  });
+
+  root.querySelector("#menu-button")?.addEventListener("click", () => {
+    openMenu(() => {
+      updateFieldStatus();
+    });
   });
 
   updateFieldStatus();

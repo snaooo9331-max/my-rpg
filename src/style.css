@@ -86,3 +86,27 @@ button {
   font-size: 14px;
   margin: 8px 0;
 }
+
+.item-list {
+  list-style: none;
+  padding: 0;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.item-row button {
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
