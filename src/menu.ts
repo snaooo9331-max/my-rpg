@@ -1,8 +1,8 @@
 import { changeScene } from "./scene";
-import { player, getAttack, getDefense } from "./player";
+import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL } from "./player";
 import { ITEMS, type ItemData } from "./items"; 
 import { SKILL_UPGRADES, STAT_LABELS } from "./skills";
-import { deleteSave } from "./save";
+import { deleteSave, saveGame } from "./save";
 
 let menuRoot: HTMLElement | null = null;
 let onClose: (() => void) | null = null;
@@ -103,6 +103,9 @@ function renderMenu() {
     <ul class="item-list">${rows}</ul>
     <h3>スキルポイント（のこり ${player.skillPoints}）</h3>
     <ul class="item-list">${skillRows}</ul>
+    <h3>転生 (${player.rebirthCount}回) </h3>
+    <p class="status">Lv${REBIRTH_LEVEL}になると転生できます。レベルとゴールドは最初に戻りますが、ずっと強くなります</p>
+    <button id="rebirth-button" ${canRebirth() ? "" : "disabled"}>転生する</button>
     <p class="status">${message}</p>
     <button id="close-menu">とじる</button>
     <div>
@@ -125,6 +128,15 @@ function renderMenu() {
     if (confirm("本当にデータを消しますか")) {
       deleteSave();
       location.reload();
+    }
+  });
+
+  menuRoot.querySelector("#rebirth-button")?.addEventListener("click", () => {
+    if (confirm("本当に転生しますか？")) {
+      rebirth();
+      saveGame();
+      message = `転生した！ ${player.rebirthCount}回目の旅がはじまる`;
+      renderMenu();
     }
   });
 }

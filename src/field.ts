@@ -53,7 +53,7 @@ export function updateFieldStatus() {
   const status = document.getElementById("field-status");
   if (status) {
     const next = expToNext(player.level) - player.exp;
-    status.textContent = `Lv${player.level} HP ${player.hp} / ${player.maxHp} ${player.gold}G SP ${player.skillPoints} 次のレベルまで ${next} `;
+    status.textContent = `Lv${player.level} HP ${player.hp} / ${player.maxHp} ${player.gold}G SP ${player.skillPoints} 次のレベルまで ${next} 転生回数 ${player.rebirthCount}`;
   }
 }
 
@@ -67,7 +67,7 @@ export function showFieldMessage(text: string) {
   }
 }
 
-const RESPAWN_MS = 3000;
+const RESPAWN_MS = 10000;
 
 function scheduleRespawn(enemy: FieldEnemy) {
   setTimeout(() => {

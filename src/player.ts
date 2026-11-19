@@ -13,21 +13,29 @@ export type Character = {
     weapon: string | null;
     armor: string | null;
     ownedItems: string[];
+    rebirthCount: number;
+};
+
+const BASE_STATS = {
+    maxHp: 30,
+    attack: 8,
+    defense: 3,
 };
 
 export const player: Character = {
     name: "勇者",
     level: 1,
     exp: 0,
-    maxHp: 30,
-    hp: 30,
-    attack: 8,
-    defense: 3,
+    maxHp: BASE_STATS.maxHp,
+    hp: BASE_STATS.maxHp,
+    attack: BASE_STATS.attack,
+    defense: BASE_STATS.defense,
     gold: 0,
     skillPoints: 0,
     weapon: null,
     armor: null,
     ownedItems: [],
+    rebirthCount: 0,
 };
 
 export function expToNext(level: number): number {
@@ -62,4 +70,25 @@ export function getDefense(): number {
     const weapon = findItem(player.weapon);
     const armor = findItem(player.armor);
     return player.defense + (weapon?.defense ?? 0) + (armor?.defense ?? 0);
+}
+
+
+
+export const REBIRTH_LEVEL = 10;
+
+export function canRebirth(): boolean {
+    return player.level >= REBIRTH_LEVEL;
+}
+
+export function rebirth() {
+    player.rebirthCount += 1;
+    player.level = 1;
+    player.exp = 0;
+    player.gold = 0;
+    player.skillPoints = 0;
+
+    player.maxHp = BASE_STATS.maxHp + player.rebirthCount * 10;
+    player.attack = BASE_STATS.attack + player.rebirthCount * 2;
+    player.defense = BASE_STATS.defense + player.rebirthCount * 1;
+    player.hp = player.maxHp;
 }
