@@ -4,6 +4,19 @@ import { ITEMS, type ItemData } from "./items";
 import { SKILL_UPGRADES, STAT_LABELS } from "./skills";
 import { deleteSave, saveGame } from "./save";
 
+export type MenuTab = "equip" | "skill" | "rebirth" | "data";
+
+export const MENU_TABS: MenuTab[] = ["equip", "skill", "rebirth", "data"];
+
+export const TAB_LABELS: Record<MenuTab, string> = {
+  equip: "そうび",
+  skill: "スキル",
+  rebirth: "転生",
+  data: "データ",
+};
+
+let currentTab: MenuTab = "equip";
+
 let menuRoot: HTMLElement | null = null;
 let onClose: (() => void) | null = null;
 let message = "";
@@ -76,18 +89,21 @@ function handleItem(action: string, id: string) {
   renderMenu();
 }
 
-function renderMenu() {
-  if (!menuRoot) {
-    return;
-  }
-
+function equipSection(): string {
   const rows = ITEMS.map((item) => `
     <li class="item-row">
-      <span>${item.name} (${itemStats(item)}) </span>
+      <span>${item.name} (${itemStats(item)})</span>
       ${itemButton(item)}
     </li>
   `).join("");
 
+  return `
+    <h3>装備</h3>
+    <ul class="item-list">${rows}</ul>
+  `;
+}
+
+function skillSection(): string {
   const skillRows = SKILL_UPGRADES.map((s) => `
     <li class="item-row">
       <span>${s.name} (${STAT_LABELS[s.stat]} + ${s.amount}) </span>
@@ -95,23 +111,58 @@ function renderMenu() {
     </li>
   `).join("");
 
-  menuRoot.innerHTML = `
-    <h2>メニュー</h2>
-    <p class="status">Lv${player.level} HP ${player.hp}/${player.maxHp}  ${player.gold}G</p>
-    <p class="status">攻撃力 ${getAttack()} 守備力 ${getDefense()}</p>
-    <h3>装備</h3>
-    <ul class="item-list">${rows}</ul>
-    <h3>スキルポイント（のこり ${player.skillPoints}）</h3>
+  return `
+    <h3>スキル</h3>
     <ul class="item-list">${skillRows}</ul>
+  `;
+}
+
+function rebirthSection(): string {
+  return `
     <h3>転生 (${player.rebirthCount}回) </h3>
     <p class="status">Lv${REBIRTH_LEVEL}になると転生できます。レベルとゴールドは最初に戻りますが、ずっと強くなります</p>
     <button id="rebirth-button" ${canRebirth() ? "" : "disabled"}>転生する</button>
+  `;
+}
+
+function dataSection(): string {
+  return `
+    <button id="delete-save" class="danger">データを消す</button>
+  `;
+}
+
+const SECTIONS: Record<MenuTab, () => string> = {
+  equip: equipSection,
+  skill: skillSection,
+  rebirth: rebirthSection,
+  data: dataSection,
+};
+
+function renderMenu() {
+  if (!menuRoot) {
+    return;
+  }
+
+  const tabs = MENU_TABS.map((tab) => `
+    <button class="${tab === currentTab ? "active" : ""}" data-tab="${tab}">${TAB_LABELS[tab]}</button>
+  `).join("");
+
+  menuRoot.innerHTML = `
+    <div class="tab-bar">${tabs}</div>
+    <p class="status">Lv${player.level} HP ${player.hp}/${player.maxHp}  ${player.gold}G</p>
+    <p class="status">攻撃力 ${getAttack()} 守備力 ${getDefense()}</p>
+    ${SECTIONS[currentTab]()}
     <p class="status">${message}</p>
     <button id="close-menu">とじる</button>
-    <div>
-      <button id="delete-save" class="danger">データを消す</button>
-    </div>
   `;
+
+  menuRoot.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      currentTab = button.dataset.tab as MenuTab;
+      message = "";
+      renderMenu();
+    });
+  });
 
   menuRoot.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -142,7 +193,8 @@ function renderMenu() {
 }
 
 
-export function openMenu(closeCallback: () => void) {
+export function openMenu(tab: MenuTab, closeCallback: () => void) {
+  currentTab = tab;
   onClose = closeCallback;
   message = "";
   renderMenu();

@@ -3,7 +3,7 @@ import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
 import { player, expToNext, START_X, START_Y } from "./player";
 import { MONSTERS } from "./monster";
-import { openMenu } from "./menu";
+import { openMenu, MENU_TABS, TAB_LABELS, type MenuTab } from "./menu";
 
 const TILE_SIZE = 32;
 const VIEW_W = 11;
@@ -210,7 +210,12 @@ function startWalking(direction: string) {
 }
 
 export function setupField(root: HTMLElement) {
+  const menuButtons = MENU_TABS.map((tab) => `
+    <button data-menu="${tab}">${TAB_LABELS[tab]}</button>
+  `).join("");
+
   root.innerHTML = `
+    <div class="top-bar">${menuButtons}</div>
     <p id="field-status" class="status"></p>
     <p id="field-message" class="message"></p>
     <div class="viewport" id="viewport">
@@ -300,9 +305,9 @@ export function setupField(root: HTMLElement) {
   root.addEventListener("touchend", stopWalking);
   root.addEventListener("touchcancel", stopWalking);
 
-  root.querySelector("#menu-button")?.addEventListener("click", () => {
-    openMenu(() => {
-      updateFieldStatus();
+  root.querySelectorAll<HTMLButtonElement>("[data-menu]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openMenu(button.dataset.menu as MenuTab, updateFieldStatus);
     });
   });
 
