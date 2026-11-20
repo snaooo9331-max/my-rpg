@@ -8,6 +8,13 @@ import { openMenu } from "./menu";
 const TILE_SIZE = 32;
 const VIEW_W = 11;
 const VIEW_H = 11;
+const SWIPE_THRESHOLD = 24;
+const WLAK_INTERVAL_MS = 180;
+
+let touchStartX = 0;
+let touchStartY = 0;
+let touchDirection: string | null = null;
+let walkTimer: number | null = null;
 
 const DIRECTIONS: Record<string, [number, number]> = {
   up: [0,-1],
@@ -168,20 +175,46 @@ function moveHero(direction: string) {
   }
 }
 
+function directionFromDrag(dx: number, dy: number): string | null {
+  if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
+    return null;
+  }
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? "right" : "left";
+  }
+  return dy > 0 ? "down" : "up";
+}
+
+function stopWalking() {
+  touchDirection = null;
+  if (walkTimer !== null) {
+    clearInterval(walkTimer);
+    walkTimer = null;
+  }
+}
+
+function startWalking(direction: string) {
+  if (touchDirection === direction) {
+    return;
+  }
+  stopWalking();
+  touchDirection = direction;
+  moveHero(direction);
+  walkTimer = window.setInterval(() => {
+    if (getScene() !== "field") {
+      stopWalking();
+      return;
+    }
+    moveHero(direction);
+  }, WLAK_INTERVAL_MS);
+}
+
 export function setupField(root: HTMLElement) {
   root.innerHTML = `
     <p id="field-status" class="status"></p>
     <p id="field-message" class="message"></p>
     <div class="viewport" id="viewport">
       <div class="map" id="map"></div>
-    </div>
-    <div class="dpad">
-      <span></span>
-      <button data-dir="up">▲</button>
-      <span></span>
-      <button data-dir="left">◀︎</button>
-      <button data-dir="down">▼</button>
-      <button data-dir="right">▶</button>
     </div>
     <button id="menu-button">メニュー</button>
   `;
@@ -235,12 +268,6 @@ export function setupField(root: HTMLElement) {
   map.appendChild(hero);
   drawHero();
 
-  root.querySelectorAll<HTMLButtonElement>("[data-dir]").forEach((button) => {
-    button.addEventListener("click", () => {
-      moveHero(button.dataset.dir ?? "");
-    });
-  });
-
   window.addEventListener("keydown", (event) => {
     if (getScene() !== "field") {
       return;
@@ -251,6 +278,27 @@ export function setupField(root: HTMLElement) {
       moveHero(direction);
     }
   });
+
+  root.addEventListener("touchstart", (event) => {
+    const touch = event.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+  }, { passive: true });
+
+  root.addEventListener("touchmove", (event) => {
+    event.preventDefault();
+    const touch = event.touches[0];
+    const direction = directionFromDrag(
+      touch.clientX - touchStartX,
+      touch.clientY - touchStartY
+    );
+    if (direction) {
+      startWalking(direction);
+    }
+  }, { passive: false });
+
+  root.addEventListener("touchend", stopWalking);
+  root.addEventListener("touchcancel", stopWalking);
 
   root.querySelector("#menu-button")?.addEventListener("click", () => {
     openMenu(() => {
