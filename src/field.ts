@@ -6,6 +6,8 @@ import { MONSTERS } from "./monster";
 import { openMenu } from "./menu";
 
 const TILE_SIZE = 32;
+const VIEW_W = 11;
+const VIEW_H = 11;
 
 const DIRECTIONS: Record<string, [number, number]> = {
   up: [0,-1],
@@ -44,6 +46,11 @@ const fieldEnemies: FieldEnemy[] = [
   { id: 1, x: 6, y: 3, monsterId: "mushroom", alive: true },
   { id: 2, x: 3, y: 5, monsterId: "poisonMushroom", alive: true },
   { id: 3, x: 8, y: 1, monsterId: "mushroom", alive: true },
+  { id: 4, x: 13, y: 8, monsterId: "mushroom", alive: true },
+  { id: 5, x: 4, y: 12, monsterId: "mushroom", alive: true },
+  { id: 6, x: 21, y: 11, monsterId: "mushroom", alive: true },
+  { id: 7, x: 21, y: 5, monsterId: "poisonMushroom", alive: true },
+  { id: 8, x: 16, y: 15, monsterId: "poisonMushroom", alive: true },
 ];
 
 export function updateFieldStatus() {
@@ -109,12 +116,27 @@ function checkEncounter(prevX: number, prevY: number) {
   });
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function updateCamera() {
+  const map = document.getElementById("map");
+  if (!map) {
+    return;
+  }
+  const cameraX = clamp(player.x - Math.floor(VIEW_W /2), 0, MAP_WIDTH - VIEW_W);
+  const cameraY = clamp(player.y - Math.floor(VIEW_H /2), 0, MAP_HEIGHT - VIEW_H);
+  map.style.transform = `translate(${-cameraX * TILE_SIZE}px, ${-cameraY * TILE_SIZE}px)`;
+}
+
 function drawHero() {
   const hero = document.getElementById("hero");
   if (hero) {
     hero.style.left = player.x * TILE_SIZE + "px";
     hero.style.top = player.y * TILE_SIZE + "px";
   }
+  updateCamera();
 }
 
 function turnHero(direction: string) {
@@ -150,7 +172,9 @@ export function setupField(root: HTMLElement) {
   root.innerHTML = `
     <p id="field-status" class="status"></p>
     <p id="field-message" class="message"></p>
-    <div class="map" id="map"></div>
+    <div class="viewport" id="viewport">
+      <div class="map" id="map"></div>
+    </div>
     <div class="dpad">
       <span></span>
       <button data-dir="up">▲</button>
@@ -165,6 +189,12 @@ export function setupField(root: HTMLElement) {
   const map = root.querySelector<HTMLDivElement>("#map");
   if (!map) {
     return;
+  }
+
+  const viewport = root.querySelector<HTMLDivElement>("#viewport");
+  if (viewport) {
+    viewport.style.width = VIEW_W * TILE_SIZE + "px";
+    viewport.style.height = VIEW_H * TILE_SIZE + "px";
   }
 
   map.style.width = MAP_WIDTH * TILE_SIZE + "px";

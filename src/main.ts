@@ -12,7 +12,6 @@ if (app) {
   const lastSaveTime = loadGame();
 
   app.innerHTML = `
-    <h1>My RPG</h1>
     <div id="field-screen"></div>
     <div id="battle-screen"></div>
     <div id="menu-screen"></div>

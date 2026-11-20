@@ -4,6 +4,7 @@ body {
   color: #ffffff;
   font-family: sans-serif;
   text-align: center;
+  overscroll-behavior: none;
 }
 
 .sprite {
@@ -30,9 +31,17 @@ button {
   -webkit-user-select: none;
 }
 
-.map {
+.viewport {
   position: relative;
-  margin: 16px auto 0;
+  overflow: hidden;
+  margin: 8px auto 0;
+}
+
+.map {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: transform 0.1s;
 }
 
 .tile {
