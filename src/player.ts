@@ -14,6 +14,8 @@ export type Character = {
     armor: string | null;
     ownedItems: string[];
     rebirthCount: number;
+    x: number;
+    y: number;
 };
 
 const BASE_STATS = {
@@ -21,6 +23,9 @@ const BASE_STATS = {
     attack: 8,
     defense: 3,
 };
+
+export const START_X = 2;
+export const START_Y = 2;
 
 export const player: Character = {
     name: "勇者",
@@ -36,6 +41,8 @@ export const player: Character = {
     armor: null,
     ownedItems: [],
     rebirthCount: 0,
+    x: START_X,
+    y:START_Y,
 };
 
 export function expToNext(level: number): number {

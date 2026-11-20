@@ -1,7 +1,7 @@
 import { getScene } from "./scene";
 import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
-import { player, expToNext } from "./player";
+import { player, expToNext, START_X, START_Y } from "./player";
 import { MONSTERS } from "./monster";
 import { openMenu } from "./menu";
 
@@ -31,9 +31,6 @@ const HERO_IMAGES: Record<string, string> = {
   left: "hero_left",
   right: "hero_right",
 };
-
-let heroX = 2;
-let heroY = 2;
 
 type FieldEnemy = {
   id: number;
@@ -71,7 +68,7 @@ const RESPAWN_MS = 10000;
 
 function scheduleRespawn(enemy: FieldEnemy) {
   setTimeout(() => {
-    if (enemy.x === heroX && enemy.y === heroY) {
+    if (enemy.x === player.x && enemy.y === player.y) {
       scheduleRespawn(enemy);
       return;
     }
@@ -82,7 +79,7 @@ function scheduleRespawn(enemy: FieldEnemy) {
 
 function checkEncounter(prevX: number, prevY: number) {
   const enemy = fieldEnemies.find(
-    (e) => e.alive && e.x === heroX && e.y === heroY
+    (e) => e.alive && e.x === player.x && e.y === player.y
   );
   if (!enemy) {
     return;
@@ -97,14 +94,14 @@ function checkEncounter(prevX: number, prevY: number) {
       updateFieldStatus();
     },
     onEscape: () => {
-      heroX = prevX;
-      heroY = prevY;
+      player.x = prevX;
+      player.y = prevY;
       drawHero();
       updateFieldStatus();
     },
     onLose: () => {
-      heroX = 2;
-      heroY = 2;
+      player.x = START_X;
+      player.y = START_Y;
       player.hp = player.maxHp;
       drawHero();
       updateFieldStatus();
@@ -115,8 +112,8 @@ function checkEncounter(prevX: number, prevY: number) {
 function drawHero() {
   const hero = document.getElementById("hero");
   if (hero) {
-    hero.style.left = heroX * TILE_SIZE + "px";
-    hero.style.top = heroY * TILE_SIZE + "px";
+    hero.style.left = player.x * TILE_SIZE + "px";
+    hero.style.top = player.y * TILE_SIZE + "px";
   }
 }
 
@@ -136,14 +133,14 @@ function moveHero(direction: string) {
 
   turnHero(direction);
 
-  const nextX = heroX + delta[0];
-  const nextY = heroY + delta[1];
+  const nextX = player.x + delta[0];
+  const nextY = player.y + delta[1];
 
   if (isWalkable(nextX, nextY)) {
-    const prevX = heroX;
-    const prevY = heroY;
-    heroX = nextX;
-    heroY = nextY;
+    const prevX = player.x;
+    const prevY = player.y;
+    player.x = nextX;
+    player.y = nextY;
     drawHero();
     checkEncounter(prevX, prevY);
   }
@@ -191,6 +188,13 @@ export function setupField(root: HTMLElement) {
     img.className = "tile";
     img.style.left = enemy.x * TILE_SIZE + "px";
     img.style.top = enemy.y * TILE_SIZE + "px";
+
+    if (enemy.x === player.x && enemy.y === player.y)  {
+      enemy.alive = false;
+      img.classList.add("hidden");
+      scheduleRespawn(enemy);
+    }
+
     map.appendChild(img);
   });
 
