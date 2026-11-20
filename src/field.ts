@@ -221,7 +221,6 @@ export function setupField(root: HTMLElement) {
     <div class="viewport" id="viewport">
       <div class="map" id="map"></div>
     </div>
-    <button id="menu-button">メニュー</button>
   `;
 
   const map = root.querySelector<HTMLDivElement>("#map");
