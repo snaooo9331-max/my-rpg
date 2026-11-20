@@ -31,6 +31,12 @@ export function loadGame(): number | null {
     }
     const data = JSON.parse(saved) as SaveData;
     Object.assign(player, data.player);
+    if (typeof player.gold !== "number" || Number.isNaN(player.gold)) {
+      player.gold = 0;
+    }
+    if (typeof player.exp !== "number" || Number.isNaN(player.exp)) {
+      player.exp = 0;
+    }
     return data.lastSaveTime ?? null;
   } catch {
     return null;

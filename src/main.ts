@@ -6,6 +6,17 @@ import { setupMenu } from "./menu";
 import { loadGame, saveGame, startAutoSave } from "./save";
 import { giveOfflineReward } from "./offline";
 
+let hiddenAt: number | null = null;
+
+function checkOfflineReward(since: number) {
+  const report = giveOfflineReward(since);
+  if (report) {
+    saveGame();
+    updateFieldStatus();
+    showFieldMessage(report);
+  }
+}
+
 const app = document.querySelector<HTMLDivElement>("#app");
 
 if (app) {
@@ -30,13 +41,19 @@ if (app) {
   changeScene("field");
 
   if (lastSaveTime !== null) {
-    const report = giveOfflineReward(lastSaveTime);
-    if (report) {
-      saveGame();
-      updateFieldStatus();
-      showFieldMessage(report);
-    }
+    checkOfflineReward(lastSaveTime);
   }
 
   startAutoSave();
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      hiddenAt = Date.now();
+    } else {
+      if (hiddenAt !== null) {
+        checkOfflineReward(hiddenAt);
+        hiddenAt = null;
+      }
+    }
+  });
 }

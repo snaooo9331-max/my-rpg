@@ -117,7 +117,7 @@ async function attack() {
     await wait(1000);
 
     player.gold += enemy.gold;
-    setText("battle.log", `${enemy.exp} のけいけんちと ${enemy.gold} ゴールドをてにいれた！`);
+    setText("battle-log", `${enemy.exp} のけいけんちと ${enemy.gold} ゴールドをてにいれた！`);
     const levelUps = gainExp(enemy.exp);
     for (const message of levelUps) {
       await wait(1200);
