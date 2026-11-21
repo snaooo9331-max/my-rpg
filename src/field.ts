@@ -68,18 +68,15 @@ const fieldEnemies: FieldEnemy[] = [
 
 export function updateFieldStatus() {
   const need = expToNext(player.level);
-  const rebirthText = player.rebirthCount > 0 ? `転生${player.rebirthCount}` : "";
 
-  setTextById("hud-level", `Lv${player.level}${rebirthText}`);
-  setTextById("hud-gold", `${player.gold}G SP ${player.skillPoints}`);
+  setTextById("hud-level", `Lv${player.level}`);
   setTextById("hud-hp", `${player.hp} / ${player.maxHp}`);
-  setTextById("hud-exp", `あと${need - player.exp}`);
+  setTextById("hud-exp", `次のレベルまで ${need - player.exp}`);
+  setTextById("hud-gold", `${player.gold}G`);
 
   const hpPercent = (player.hp / player.maxHp) * 100;
-  const expPercent = (player.exp / need) * 100;
 
   setBar("hp-fill", hpPercent);
-  setBar("exp-fill", expPercent);
   document.getElementById("hp-fill")?.classList.toggle("low", hpPercent <= 30);
 }
 
@@ -232,16 +229,20 @@ export function setupField(root: HTMLElement) {
   root.innerHTML = `
     <div class="hud">
       <div class="hud-status window">
-        <div class="hud-row">
-          <span id="hud-level"></span>
-          <span id="hud-gold"></span>
-        </div>
+        <div id="hud-level" class="hud-level"></div>
         <div class="bar-label">HP <span id="hud-hp"></span></div>
         <div class="bar"><div id="hp-fill" class="bar-fill hp"></div></div>
-        <div class="bar-label">EXP <span id="hud-exp"></span></div>
-        <div class="bar"><div id="exp-fill" class="bar-fill exp"></div></div>
+        <div id="hud-exp" class="hud-exp"></div>
       </div>
-      <button id="menu-toggle" class="window menu-toggle">メニュー</button>
+      <div class="hud-side">
+        <div class="hud-gold window">
+          <div>
+            <div class="gold-label">所持金</div>
+            <div id="hud-gold"></div>
+          </div>
+        </div>
+        <button id="menu-toggle" class="window menu-toggle">メニュー</button>
+      </div>
     </div>
     <p id="field-message" class="window message"></p>
     <div class="viewport" id="viewport">
