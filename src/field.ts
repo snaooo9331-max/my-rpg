@@ -258,7 +258,7 @@ export function setupField(root: HTMLElement) {
           <span id="hud-gold"></span>
         </div>
         <div class="bar-label">HP <span id="hud-hp"></span></div>
-        <div class="bar"><div id="hp-fill" class="bar-fill"></div></div>
+        <div class="bar"><div id="hp-fill" class="bar-fill hp"></div></div>
         <div class="bar-label">EXP <span id="hud-exp"></span></div>
         <div class="bar"><div id="exp-fill" class="bar-fill exp"></div></div>
       </div>
