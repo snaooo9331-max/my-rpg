@@ -30,7 +30,14 @@ export function loadGame(): number | null {
       return null;
     }
     const data = JSON.parse(saved) as SaveData;
-    Object.assign(player, data.player);
+
+    const savedPlayer = data.player as Partial<Character> & { skillPoints?: number };
+    if (savedPlayer.skillPoints !== undefined) {
+      savedPlayer.statPoints ??= savedPlayer.skillPoints;
+      delete savedPlayer.skillPoints;
+    }
+    Object.assign(player, savedPlayer);
+
     if (typeof player.gold !== "number" || Number.isNaN(player.gold)) {
       player.gold = 0;
     }
@@ -38,7 +45,9 @@ export function loadGame(): number | null {
       player.exp = 0;
     }
     return data.lastSaveTime ?? null;
-  } catch {
+  } catch (error) {
+    console.error("セーブデータの読み込みに失敗しました", error);
+    saveEnabled = false;
     return null;
   }
 }

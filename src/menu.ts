@@ -1,16 +1,16 @@
 import { changeScene } from "./scene";
 import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL } from "./player";
 import { ITEMS, type ItemData } from "./items"; 
-import { SKILL_UPGRADES, STAT_LABELS } from "./skills";
+import { STAT_UPGRADES, STAT_LABELS } from "./upgrades";
 import { deleteSave, saveGame } from "./save";
 
-export type MenuTab = "equip" | "skill" | "rebirth" | "data";
+export type MenuTab = "equip" | "stats" | "rebirth" | "data";
 
-export const MENU_TABS: MenuTab[] = ["equip", "skill", "rebirth", "data"];
+export const MENU_TABS: MenuTab[] = ["equip", "stats", "rebirth", "data"];
 
 export const TAB_LABELS: Record<MenuTab, string> = {
   equip: "そうび",
-  skill: "スキル",
+  stats: "つよさ",
   rebirth: "転生",
   data: "データ",
 };
@@ -41,13 +41,13 @@ function itemButton(item: ItemData): string {
   return `<button data-action="buy" data-id="${item.id}">買う ${item.price}G</button>`;
 }
 
-function useSkillPoint(id: string) {
-  const upgrade = SKILL_UPGRADES.find((s) => s.id === id);
-  if (!upgrade || player.skillPoints <= 0) {
+function useStatPoint(id: string) {
+  const upgrade = STAT_UPGRADES.find((s) => s.id === id);
+  if (!upgrade || player.statPoints <= 0) {
     return;
   }
 
-  player.skillPoints -= 1;
+  player.statPoints -= 1;
   player[upgrade.stat] += upgrade.amount;
 
   if (upgrade.stat === "maxHp") {
@@ -58,8 +58,8 @@ function useSkillPoint(id: string) {
 }
 
 function handleItem(action: string, id: string) {
-  if (action === "skill") {
-    useSkillPoint(id);
+  if (action === "stat") {
+    useStatPoint(id);
     renderMenu();
     return;
   }
@@ -105,17 +105,17 @@ function equipSection(): string {
   `;
 }
 
-function skillSection(): string {
-  const skillRows = SKILL_UPGRADES.map((s) => `
+function statsSection(): string {
+  const rows = STAT_UPGRADES.map((s) => `
     <li class="item-row">
       <span>${s.name} (${STAT_LABELS[s.stat]} + ${s.amount}) </span>
-      <button data-action="skill" data-id="${s.id}" ${player.skillPoints <= 0 ? "disabled" : ""}>SPを使う</button>
+      <button data-action="stat" data-id="${s.id}" ${player.statPoints <= 0 ? "disabled" : ""}>ポイントを使う</button>
     </li>
   `).join("");
 
   return `
-    <h3>スキル</h3>
-    <ul class="item-list">${skillRows}</ul>
+    <h3>強化ポイント (のこり ${player.statPoints}) </h3>
+    <ul class="item-list">${rows}</ul>
   `;
 }
 
@@ -135,7 +135,7 @@ function dataSection(): string {
 
 const SECTIONS: Record<MenuTab, () => string> = {
   equip: equipSection,
-  skill: skillSection,
+  stats: statsSection,
   rebirth: rebirthSection,
   data: dataSection,
 };

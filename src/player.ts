@@ -9,7 +9,7 @@ export type Character = {
     attack: number;
     defense: number;
     gold: number;
-    skillPoints: number;
+    statPoints: number;
     weapon: string | null;
     armor: string | null;
     ownedItems: string[];
@@ -36,7 +36,7 @@ export const player: Character = {
     attack: BASE_STATS.attack,
     defense: BASE_STATS.defense,
     gold: 0,
-    skillPoints: 0,
+    statPoints: 0,
     weapon: null,
     armor: null,
     ownedItems: [],
@@ -59,7 +59,7 @@ export function gainExp(amount: number): string[] {
         player.maxHp += 5;
         player.attack += 2;
         player.defense += 1;
-        player.skillPoints += 1;
+        player.statPoints += 1;
         player.hp = player.maxHp;
         messages.push(`レベルが ${player.level} にあがった！`);
     }
@@ -92,7 +92,7 @@ export function rebirth() {
     player.level = 1;
     player.exp = 0;
     player.gold = 0;
-    player.skillPoints = 0;
+    player.statPoints = 0;
 
     player.maxHp = BASE_STATS.maxHp + player.rebirthCount * 10;
     player.attack = BASE_STATS.attack + player.rebirthCount * 2;
