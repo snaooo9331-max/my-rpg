@@ -243,7 +243,7 @@ export function setupField(root: HTMLElement) {
       </div>
       <button id="menu-toggle" class="window menu-toggle">メニュー</button>
     </div>
-    <p id="field-message" class="message"></p>
+    <p id="field-message" class="window message"></p>
     <div class="viewport" id="viewport">
       <div class="map" id="map"></div>
     </div>
