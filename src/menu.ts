@@ -148,12 +148,16 @@ function renderMenu() {
   `).join("");
 
   menuRoot.innerHTML = `
-    <div class="tab-bar">${tabs}</div>
-    <p class="status">Lv${player.level} HP ${player.hp}/${player.maxHp}  ${player.gold}G</p>
-    <p class="status">攻撃力 ${getAttack()} 守備力 ${getDefense()}</p>
-    ${SECTIONS[currentTab]()}
-    <p class="status">${message}</p>
-    <button id="close-menu">とじる</button>
+    <div class="window tab-bar">${tabs}</div>
+    <div class="window menu-status">
+      <div>Lv${player.level} HP ${player.hp}/${player.maxHp}  ${player.gold}G</div>
+      <div>攻撃力 ${getAttack()} 守備力 ${getDefense()}</div>
+    </div>
+    <div class="window menu-content">
+      ${SECTIONS[currentTab]()}
+      <p class="status">${message}</p>
+    </div>
+    <button id="close-menu" class="window menu-close">とじる</button>
   `;
 
   menuRoot.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((button) => {

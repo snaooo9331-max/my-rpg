@@ -4,6 +4,7 @@ import { startBattle } from "./battle";
 import { player, expToNext, START_X, START_Y } from "./player";
 import { MONSTERS } from "./monster";
 import { openMenu, MENU_TABS, TAB_LABELS, type MenuTab } from "./menu";
+import { clamp, setTextById, setBar } from "./ui";
 
 function chooseTileSize(): number {
   const shortSide = Math.min(window.innerWidth, window.innerHeight);
@@ -65,28 +66,14 @@ const fieldEnemies: FieldEnemy[] = [
   { id: 8, x: 16, y: 15, monsterId: "poisonMushroom", alive: true },
 ];
 
-function setFieldText(id: string, text: string) {
-  const element = document.getElementById(id);
-  if (element) {
-    element.textContent = text;
-  }
-}
-
-function setBar(id: string, percent: number) {
-  const element = document.getElementById(id);
-  if (element) {
-    element.style.width = clamp(percent, 0, 100) + "%";
-  }
-}
-
 export function updateFieldStatus() {
   const need = expToNext(player.level);
   const rebirthText = player.rebirthCount > 0 ? `転生${player.rebirthCount}` : "";
 
-  setFieldText("hud-level", `Lv${player.level}${rebirthText}`);
-  setFieldText("hud-gold", `${player.gold}G SP ${player.skillPoints}`);
-  setFieldText("hud-hp", `${player.hp} / ${player.maxHp}`);
-  setFieldText("hud-exp", `あと${need - player.exp}`);
+  setTextById("hud-level", `Lv${player.level}${rebirthText}`);
+  setTextById("hud-gold", `${player.gold}G SP ${player.skillPoints}`);
+  setTextById("hud-hp", `${player.hp} / ${player.maxHp}`);
+  setTextById("hud-exp", `あと${need - player.exp}`);
 
   const hpPercent = (player.hp / player.maxHp) * 100;
   const expPercent = (player.exp / need) * 100;
@@ -149,10 +136,6 @@ function checkEncounter(prevX: number, prevY: number) {
       updateFieldStatus();
     },
   });
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
 }
 
 function cameraOffset(heroPx: number, viewPx: number, mapPx: number): number {

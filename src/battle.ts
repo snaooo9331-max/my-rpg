@@ -1,6 +1,7 @@
 import { changeScene } from "./scene";
 import { player, gainExp, getAttack, getDefense} from "./player";
 import { MONSTERS, type MonsterData } from "./monster";
+import { setTextById, setBar } from "./ui";
 
 type BattleOptions = {
   monsterId: string;
@@ -50,16 +51,18 @@ function toggleAuto() {
   scheduleAuto();
 }
 
-function setText(id: string, text: string) {
-  const element = battleRoot?.querySelector("#" + id);
-  if ( element) {
-    element.textContent = text;
-  }
-}
-
 function updateStatus() {
-  setText("enemy-status", `${enemy.name} HP ${enemyHp} / ${enemy.maxHp}`);
-  setText("player-status", `${player.name} Lv${player.level} HP ${player.hp} / ${player.maxHp}`);
+  setTextById("battle-enemy-name", enemy.name);
+  setTextById("battle-player-level", `Lv${player.level}`);
+  setTextById("battle-player-hp", `${player.hp} / ${player.maxHp}`);
+  setTextById("battle-enemy-hp", `${enemyHp} / ${enemy.maxHp}`);
+
+  const enemyPercent = (enemyHp / enemy.maxHp) * 100;
+  const playerPercent = (player.hp / player.maxHp) * 100;
+
+  setBar("battle-enemy-hp-fill", enemyPercent);
+  setBar("battle-player-hp-fill", playerPercent);
+  document.getElementById("battle-player-hp-fill")?.classList.toggle("low", playerPercent <= 30);
 }
 
 export function startBattle(BattleOptions: BattleOptions) {
@@ -75,7 +78,7 @@ export function startBattle(BattleOptions: BattleOptions) {
   }
 
   updateStatus();
-  setText("battle-log", `${enemy.name}があらわれた！`);
+  setTextById("battle-log", `${enemy.name}があらわれた！`);
   changeScene("battle");
   scheduleAuto();
 }
@@ -84,13 +87,13 @@ async function enemyTurn(): Promise<boolean> {
   await wait(800);
   const damage = calcDamage(enemy.attack, getDefense());
   player.hp = Math.max(0, player.hp - damage);
-  setText("battle-log", `${enemy.name}のこうげき！ ${player.name}は ${damage}のダメージをうけた！`);
+  setTextById("battle-log", `${enemy.name}のこうげき！ ${player.name}は ${damage}のダメージをうけた！`);
   updateStatus();
 
   if (player.hp <= 0) {
     inBattle = false;
     await wait(1000);
-    setText("battle-log", `${player.name}はたおれてしまった...`);
+    setTextById("battle-log", `${player.name}はたおれてしまった...`);
     await wait(1500);
     options?.onLose();
     changeScene("field");
@@ -107,21 +110,21 @@ async function attack() {
 
   const damage = calcDamage(getAttack(), enemy.defense);
   enemyHp = Math.max(0, enemyHp - damage);
-  setText("battle-log", `${player.name}のこうげき！ ${enemy.name}に${damage}のダメージ！`);
+  setTextById("battle-log", `${player.name}のこうげき！ ${enemy.name}に${damage}のダメージ！`);
   updateStatus();
 
   if ( enemyHp <= 0) {
     inBattle = false;
     await wait(1000);
-    setText("battle-log", `${enemy.name}をたおした！`);
+    setTextById("battle-log", `${enemy.name}をたおした！`);
     await wait(1000);
 
     player.gold += enemy.gold;
-    setText("battle-log", `${enemy.exp} のけいけんちと ${enemy.gold} ゴールドをてにいれた！`);
+    setTextById("battle-log", `${enemy.exp} のけいけんちと ${enemy.gold} ゴールドをてにいれた！`);
     const levelUps = gainExp(enemy.exp);
     for (const message of levelUps) {
       await wait(1200);
-      setText("battle-log", message);
+      setTextById("battle-log", message);
       updateStatus();
     }
     await wait(1200);
@@ -143,7 +146,7 @@ async function run() {
   busy = true;
 
   if (Math.random() < 0.5) {
-    setText("battle-log", "にげられなかった！");
+    setTextById("battle-log", "にげられなかった！");
     if (await enemyTurn()) {
       busy = false;
       scheduleAuto();
@@ -152,7 +155,7 @@ async function run() {
   }
 
   inBattle = false;
-  setText("battle-log", "うまくにげきれた！");
+  setTextById("battle-log", "うまくにげきれた！");
   await wait(800);
   options?.onEscape();
   changeScene("field");
@@ -162,11 +165,24 @@ export function setupBattle(root: HTMLElement) {
   battleRoot = root;
 
   root.innerHTML = `
-    <p id="enemy-status"></p>
-    <img id="battle-enemy-image" class="battle-enemy" alt="キノコの魔物">
-    <p id="battle-log" class="battle-log"></p>
-    <p id="player-status"></p>
-    <div class="commands">
+    <div class="window battle-player">
+      <div class="hud-row">
+        <span>勇者</span>
+        <span id="battle-player-level"></span>
+      </div>
+      <div class="bar-label">HP <span id="battle-player-hp"></span></div>
+      <div class="bar"><div id="battle-player-hp-fill" class="bar-fill hp"></div></div>
+    </div>
+    <div class="battle-stage">
+      <img id="battle-enemy-image" class="battle-enemy" alt="">
+      <div class="enemy-info">
+        <span id="battle-enemy-name"></span>
+        <div class="bar-label">HP <span id="battle-enemy-hp"></span></div>
+        <div class="bar"><div id="battle-enemy-hp-fill" class="bar-fill enemy"></div></div>
+      </div>
+    </div>
+    <p id="battle-log" class="window battle-log"></p>
+    <div class="window commands">
       <button id="attack-button">たたかう</button>
       <button id="run-button">にげる</button>
       <button id="auto-button">オート：OFF</button>
