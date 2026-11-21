@@ -1,7 +1,7 @@
 import { getScene } from "./scene";
 import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
-import { player, expToNext, START_X, START_Y } from "./player";
+import { player, expToNext, START_X, START_Y, rebirth } from "./player";
 import { MONSTERS } from "./monster";
 import { openMenu, MENU_TABS, TAB_LABELS, type MenuTab } from "./menu";
 
@@ -65,12 +65,35 @@ const fieldEnemies: FieldEnemy[] = [
   { id: 8, x: 16, y: 15, monsterId: "poisonMushroom", alive: true },
 ];
 
-export function updateFieldStatus() {
-  const status = document.getElementById("field-status");
-  if (status) {
-    const next = expToNext(player.level) - player.exp;
-    status.textContent = `Lv${player.level} HP ${player.hp} / ${player.maxHp} ${player.gold}G SP ${player.skillPoints} 次のレベルまで ${next} 転生回数 ${player.rebirthCount}`;
+function setFieldText(id: string, text: string) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = text;
   }
+}
+
+function setBar(id: string, percent: number) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.style.width = clamp(percent, 0, 100) + "%";
+  }
+}
+
+export function updateFieldStatus() {
+  const need = expToNext(player.level);
+  const rebirthText = player.rebirthCount > 0 ? `転生${player.rebirthCount}` : "";
+
+  setFieldText("hud-level", `Lv${player.level}${rebirthText}`);
+  setFieldText("hud-gold", `${player.gold}G SP ${player.skillPoints}`);
+  setFieldText("hud-hp", `${player.hp} / ${player.maxHp}`);
+  setFieldText("hud-exp", `あと${need - player.exp}`);
+
+  const hpPercent = (player.hp / player.maxHp) * 100;
+  const expPercent = (player.exp / need) * 100;
+
+  setBar("hp-fill", hpPercent);
+  setBar("exp-fill", expPercent);
+  document.getElementById("hp-fill")?.classList.toggle("low", hpPercent <= 30);
 }
 
 export function showFieldMessage(text: string) {
@@ -228,8 +251,20 @@ export function setupField(root: HTMLElement) {
   `).join("");
 
   root.innerHTML = `
-    <div class="top-bar">${menuButtons}</div>
-    <p id="field-status" class="status"></p>
+    <div class="hud">
+      <div class="hud-status window">
+        <div class="hud-row">
+          <span id="hud-level"></span>
+          <span id="hud-gold"></span>
+        </div>
+        <div class="bar-label">HP <span id="hud-hp"></span></div>
+        <div class="bar"><div id="hp-fill" class="bar-fill"></div></div>
+        <div class="bar-label">EXP <span id="hud-exp"></span></div>
+        <div class="bar"><div id="exp-fill" class="bar-fill exp"></div></div>
+      </div>
+      <button id="menu-toggle" class="window menu-toggle">メニュー</button>
+    </div>
+    <div id="menu-popup" class="menu-popup window hidden">${menuButtons}</div>
     <p id="field-message" class="message"></p>
     <div class="viewport" id="viewport">
       <div class="map" id="map"></div>
@@ -293,6 +328,7 @@ export function setupField(root: HTMLElement) {
     const direction = KEY_TO_DIRECTION[event.key];
     if (direction) {
       event.preventDefault();
+      document.getElementById("menu-popup")?.classList.add("hidden");
       moveHero(direction);
     }
   });
@@ -311,6 +347,7 @@ export function setupField(root: HTMLElement) {
       touch.clientY - touchStartY
     );
     if (direction) {
+      document.getElementById("menu-popup")?.classList.add("hidden");
       startWalking(direction);
     }
   }, { passive: false });
@@ -318,8 +355,13 @@ export function setupField(root: HTMLElement) {
   root.addEventListener("touchend", stopWalking);
   root.addEventListener("touchcancel", stopWalking);
 
+  root.querySelector("#menu-toggle")?.addEventListener("click", () => {
+    document.getElementById("menu-popup")?.classList.toggle("hidden");
+  });
+
   root.querySelectorAll<HTMLButtonElement>("[data-menu]").forEach((button) => {
     button.addEventListener("click", () => {
+      document.getElementById("menu-popup")?.classList.add("hidden");
       openMenu(button.dataset.menu as MenuTab, updateFieldStatus);
     });
   });

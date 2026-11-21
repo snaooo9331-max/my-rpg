@@ -137,19 +137,113 @@ button:disabled {
   touch-action: none;
 }
 
-.top-bar, .tab-bar {
+#field-screen:not(.hidden) {
   display: flex;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 4px;
+  flex-direction: column;
+  height: 100dvh;
+  position: relative;
 }
 
-.top-bar button, .tab-bar button {
-  margin: 0;
-  font-size: 14px;
-  padding: 8px 10px;
+.window {
+  background-color: rgba(20, 20, 40, 0.85);
+  border: 3px solid #ffffff;
+  border-radius: 8px;
+  color: #ffffff;
 }
 
-.tab-bar .active {
+.hud {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  z-index: 10;
+}
+
+.hud-status {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.hud-label {
+  font-size: 11px;
+}
+
+.bar {
+  height: 8px;
+  background-color: #444455;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 2px 0 6px;
+}
+
+.bar-fill {
+  height: 100%;
+  width: 100%;
+  transition: width 0.3s;
+}
+
+.bar-fill.hp {
   background-color: #4caf50;
+}
+
+.bar-fill.hp.low {
+  background-color: #e53935;
+}
+
+.bar-fill.exp {
+  background-color: #4fa3f7;
+}
+
+.menu-toggle {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 14px;
+  background-color: rgba(20, 20, 40, 0.85);
+  color: #ffffff;
+}
+
+.menu-popup {
+  position: absolute;
+  top: 72px;
+  right: 8px;
+  padding: 8px;
+  z-index: 11;
+}
+
+.menu-popup:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.menu-popup button {
+  margin: 0;
+  min-width: 110px;
+}
+
+.message {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 16px;
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  text-align: left;
+  z-index: 10;
+}
+
+.message:empty {
+  display: none;
 }
