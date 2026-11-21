@@ -1,7 +1,7 @@
 import { getScene } from "./scene";
 import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
-import { player, expToNext, START_X, START_Y, rebirth } from "./player";
+import { player, expToNext, START_X, START_Y } from "./player";
 import { MONSTERS } from "./monster";
 import { openMenu, MENU_TABS, TAB_LABELS, type MenuTab } from "./menu";
 
