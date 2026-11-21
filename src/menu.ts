@@ -15,7 +15,9 @@ export const TAB_LABELS: Record<MenuTab, string> = {
   data: "データ",
 };
 
-let currentTab: MenuTab = "equip";
+type MenuView = "top" | MenuTab;
+
+let currentView: MenuView = "top";
 
 let menuRoot: HTMLElement | null = null;
 let onClose: (() => void) | null = null;
@@ -138,34 +140,74 @@ const SECTIONS: Record<MenuTab, () => string> = {
   data: dataSection,
 };
 
+function statusHtml(): string {
+  return `
+    <div class="window menu-status">
+      <div>Lv${player.level} HP ${player.hp}/${player.maxHp} ${player.gold}G</div>
+      <div>攻撃力 ${getAttack()} 守備力 ${getDefense()}</div>
+    </div>
+  `;
+}
+
 function renderMenu() {
+  if (currentView === "top") {
+    renderTop();
+  } else {
+    renderSection(currentView);
+  }
+}
+
+function renderTop() {
   if (!menuRoot) {
     return;
   }
 
-  const tabs = MENU_TABS.map((tab) => `
-    <button class="${tab === currentTab ? "active" : ""}" data-tab="${tab}">${TAB_LABELS[tab]}</button>
+  const buttons = MENU_TABS.map((tab) => `
+    <button data-tab="${tab}">${TAB_LABELS[tab]}</button>
   `).join("");
-
+  
   menuRoot.innerHTML = `
-    <div class="window tab-bar">${tabs}</div>
-    <div class="window menu-status">
-      <div>Lv${player.level} HP ${player.hp}/${player.maxHp}  ${player.gold}G</div>
-      <div>攻撃力 ${getAttack()} 守備力 ${getDefense()}</div>
-    </div>
-    <div class="window menu-content">
-      ${SECTIONS[currentTab]()}
-      <p class="status">${message}</p>
-    </div>
+    <div class="window menu-header"><span>メニュー</span></div>
+    ${statusHtml()}
+    <div class="window menu-list">${buttons}</div>
     <button id="close-menu" class="window menu-close">とじる</button>
   `;
-
+  
   menuRoot.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((button) => {
     button.addEventListener("click", () => {
-      currentTab = button.dataset.tab as MenuTab;
+      currentView = button.dataset.tab as MenuTab;
       message = "";
       renderMenu();
     });
+  });
+  
+  menuRoot.querySelector("#close-menu")?.addEventListener("click", () => {
+    changeScene("field");
+    onClose?.();
+  });
+}
+
+function renderSection(tab: MenuTab) {
+  if (!menuRoot) {
+    return;
+  }
+
+  menuRoot.innerHTML = `
+    <div class="window menu-header">
+      <span>${TAB_LABELS[tab]}</span>
+      <button id="menu-back">もどる</button>
+    </div>
+    ${statusHtml()}
+    <div class="window menu-content">
+      ${SECTIONS[tab]()}
+      <p class="status">${message}</p>
+    </div>
+  `;
+
+  menuRoot.querySelector("#menu-back")?.addEventListener("click", () => {
+    currentView = "top";
+    message = "";
+    renderMenu();
   });
 
   menuRoot.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((button) => {
@@ -174,13 +216,8 @@ function renderMenu() {
     });
   });
 
-  menuRoot.querySelector("#close-menu")?.addEventListener("click", () =>{
-    changeScene("field");
-    onClose?.();
-  });
-  
   menuRoot.querySelector("#delete-save")?.addEventListener("click", () => {
-    if (confirm("本当にデータを消しますか")) {
+    if (confirm("本当にデータを消しますか？")) {
       deleteSave();
       location.reload();
     }
@@ -196,9 +233,8 @@ function renderMenu() {
   });
 }
 
-
-export function openMenu(tab: MenuTab, closeCallback: () => void) {
-  currentTab = tab;
+export function openMenu(closeCallback: () => void) {
+  currentView = "top";
   onClose = closeCallback;
   message = "";
   renderMenu();

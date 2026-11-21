@@ -166,20 +166,26 @@ button {
 .item-list {
   list-style: none;
   padding: 0;
-  max-width: 340px;
-  margin: 0 auto;
 }
 
 .item-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.item-row:last-child {
+  border-bottom: none;
 }
 
 .item-row button {
+  width: 100%;
+  margin: 0;
   font-size: 14px;
-  padding: 8px 12px;
+  padding: 10px 12px;
 }
 
 button:disabled {
@@ -281,23 +287,34 @@ button:disabled {
   color: #ffffff;
 }
 
-.menu-popup {
-  position: absolute;
-  top: 72px;
-  right: 8px;
-  padding: 8px;
-  z-index: 11;
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 17px;
+  font-weight: bold;
+  min-height: 38px;
 }
 
-.menu-popup:not(.hidden) {
+.menu-header button {
+  margin: 0;
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.menu-list {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  padding: 12px;
 }
 
-.menu-popup button {
+.menu-list button {
   margin: 0;
-  min-width: 110px;
+  font-size: 18px;
+  padding: 16px;
 }
 
 .message {

@@ -3,7 +3,7 @@ import { MAP_WIDTH, MAP_HEIGHT, getTile, isWalkable } from "./map";
 import { startBattle } from "./battle";
 import { player, expToNext, START_X, START_Y } from "./player";
 import { MONSTERS } from "./monster";
-import { openMenu, MENU_TABS, TAB_LABELS, type MenuTab } from "./menu";
+import { openMenu } from "./menu";
 import { clamp, setTextById, setBar } from "./ui";
 
 function chooseTileSize(): number {
@@ -229,10 +229,6 @@ function startWalking(direction: string) {
 }
 
 export function setupField(root: HTMLElement) {
-  const menuButtons = MENU_TABS.map((tab) => `
-    <button data-menu="${tab}">${TAB_LABELS[tab]}</button>
-  `).join("");
-
   root.innerHTML = `
     <div class="hud">
       <div class="hud-status window">
@@ -247,7 +243,6 @@ export function setupField(root: HTMLElement) {
       </div>
       <button id="menu-toggle" class="window menu-toggle">メニュー</button>
     </div>
-    <div id="menu-popup" class="menu-popup window hidden">${menuButtons}</div>
     <p id="field-message" class="message"></p>
     <div class="viewport" id="viewport">
       <div class="map" id="map"></div>
@@ -311,7 +306,6 @@ export function setupField(root: HTMLElement) {
     const direction = KEY_TO_DIRECTION[event.key];
     if (direction) {
       event.preventDefault();
-      document.getElementById("menu-popup")?.classList.add("hidden");
       moveHero(direction);
     }
   });
@@ -330,7 +324,6 @@ export function setupField(root: HTMLElement) {
       touch.clientY - touchStartY
     );
     if (direction) {
-      document.getElementById("menu-popup")?.classList.add("hidden");
       startWalking(direction);
     }
   }, { passive: false });
@@ -339,14 +332,7 @@ export function setupField(root: HTMLElement) {
   root.addEventListener("touchcancel", stopWalking);
 
   root.querySelector("#menu-toggle")?.addEventListener("click", () => {
-    document.getElementById("menu-popup")?.classList.toggle("hidden");
-  });
-
-  root.querySelectorAll<HTMLButtonElement>("[data-menu]").forEach((button) => {
-    button.addEventListener("click", () => {
-      document.getElementById("menu-popup")?.classList.add("hidden");
-      openMenu(button.dataset.menu as MenuTab, updateFieldStatus);
-    });
+    openMenu(updateFieldStatus);
   });
 
   updateFieldStatus();
