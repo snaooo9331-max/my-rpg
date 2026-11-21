@@ -1,14 +1,15 @@
 import { changeScene } from "./scene";
-import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL } from "./player";
-import { ITEMS, type ItemData } from "./items"; 
+import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL, expToNext } from "./player";
+import { ITEMS, findItem, type ItemData } from "./items"; 
 import { STAT_UPGRADES, STAT_LABELS } from "./upgrades";
 import { deleteSave, saveGame } from "./save";
 
-export type MenuTab = "equip" | "stats" | "rebirth" | "data";
+export type MenuTab = "status" | "equip" | "stats" | "rebirth" | "data";
 
-export const MENU_TABS: MenuTab[] = ["equip", "stats", "rebirth", "data"];
+export const MENU_TABS: MenuTab[] = ["status", "equip", "stats", "rebirth", "data"];
 
 export const TAB_LABELS: Record<MenuTab, string> = {
+  status: "ステータス",
   equip: "そうび",
   stats: "つよさ",
   rebirth: "転生",
@@ -91,6 +92,30 @@ function handleItem(action: string, id: string) {
   renderMenu();
 }
 
+function statusSection(): string {
+  const weapon = findItem(player.weapon);
+  const armor = findItem(player.armor);
+
+  const rows: [string, string][] = [
+    ["レベル", `${player.level}`],
+    ["HP", `${player.hp} / ${player.maxHp}`],
+    ["攻撃力", `${getAttack()}`],
+    ["守備力", `${getDefense()}`],
+    ["次のレベルまで", `${expToNext(player.level) - player.exp}`],
+    ["所持金", `${player.gold}G`],
+    ["強化ポイント", `${player.statPoints}`],
+    ["転生回数", `${player.rebirthCount}`],
+    ["武器", weapon?.name ?? "なし"],
+    ["防具", armor?.name ?? "なし"],
+  ];
+
+  const html = rows.map(([label, value]) => `
+    <li class="stat-row"><span>${label}</span><span>${value}</span></li>
+  `).join("");
+
+  return `<ul class="item-list">${html}</ul>`;
+}
+
 function equipSection(): string {
   const rows = ITEMS.map((item) => `
     <li class="item-row">
@@ -134,20 +159,12 @@ function dataSection(): string {
 }
 
 const SECTIONS: Record<MenuTab, () => string> = {
+  status: statusSection,
   equip: equipSection,
   stats: statsSection,
   rebirth: rebirthSection,
   data: dataSection,
 };
-
-function statusHtml(): string {
-  return `
-    <div class="window menu-status">
-      <div>Lv${player.level} HP ${player.hp}/${player.maxHp} ${player.gold}G</div>
-      <div>攻撃力 ${getAttack()} 守備力 ${getDefense()}</div>
-    </div>
-  `;
-}
 
 function renderMenu() {
   if (currentView === "top") {
@@ -168,7 +185,6 @@ function renderTop() {
   
   menuRoot.innerHTML = `
     <div class="window menu-header"><span>メニュー</span></div>
-    ${statusHtml()}
     <div class="window menu-list">${buttons}</div>
     <button id="close-menu" class="window menu-close">とじる</button>
   `;
@@ -197,7 +213,6 @@ function renderSection(tab: MenuTab) {
       <span>${TAB_LABELS[tab]}</span>
       <button id="menu-back">もどる</button>
     </div>
-    ${statusHtml()}
     <div class="window menu-content">
       ${SECTIONS[tab]()}
       <p class="status">${message}</p>

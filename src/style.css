@@ -78,7 +78,7 @@ button {
   box-sizing: border-box;
 }
 
-.battle-player, .menu-status {
+.battle-player {
   padding: 6px 10px;
   font-size: 13px;
   text-align: left;
@@ -362,4 +362,16 @@ button:disabled {
 
 .message:empty {
   display: none;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
 }
