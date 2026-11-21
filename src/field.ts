@@ -5,9 +5,14 @@ import { player, expToNext, START_X, START_Y } from "./player";
 import { MONSTERS } from "./monster";
 import { openMenu, MENU_TABS, TAB_LABELS, type MenuTab } from "./menu";
 
-const TILE_SIZE = 32;
-const VIEW_W = 11;
-const VIEW_H = 11;
+function chooseTileSize(): number {
+  const shortSide = Math.min(window.innerWidth, window.innerHeight);
+  const scale = clamp(Math.floor(shortSide / 128), 2, 4);
+  return 16 * scale;
+}
+
+const TILE_SIZE = chooseTileSize();
+
 const SWIPE_THRESHOLD = 24;
 const WLAK_INTERVAL_MS = 180;
 
@@ -127,14 +132,22 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function cameraOffset(heroPx: number, viewPx: number, mapPx: number): number {
+  if (mapPx <= viewPx) {
+    return (viewPx - mapPx) / 2;
+  }
+  return -clamp(heroPx + TILE_SIZE / 2 - viewPx / 2, 0, mapPx - viewPx)
+}
+
 function updateCamera() {
   const map = document.getElementById("map");
-  if (!map) {
+  const viewport = document.getElementById("viewport");
+  if (!map || !viewport) {
     return;
   }
-  const cameraX = clamp(player.x - Math.floor(VIEW_W /2), 0, MAP_WIDTH - VIEW_W);
-  const cameraY = clamp(player.y - Math.floor(VIEW_H /2), 0, MAP_HEIGHT - VIEW_H);
-  map.style.transform = `translate(${-cameraX * TILE_SIZE}px, ${-cameraY * TILE_SIZE}px)`;
+  const x = cameraOffset(player.x * TILE_SIZE, viewport.clientWidth, MAP_WIDTH * TILE_SIZE);
+  const y = cameraOffset(player.y * TILE_SIZE, viewport.clientHeight, MAP_HEIGHT * TILE_SIZE);
+  map.style.transform = `translate(${x}px, ${y}px)`;
 }
 
 function drawHero() {
@@ -228,10 +241,11 @@ export function setupField(root: HTMLElement) {
     return;
   }
 
+  document.documentElement.style.setProperty("--tile", TILE_SIZE + "px");
+
   const viewport = root.querySelector<HTMLDivElement>("#viewport");
   if (viewport) {
-    viewport.style.width = VIEW_W * TILE_SIZE + "px";
-    viewport.style.height = VIEW_H * TILE_SIZE + "px";
+    new ResizeObserver(updateCamera).observe(viewport);
   }
 
   map.style.width = MAP_WIDTH * TILE_SIZE + "px";

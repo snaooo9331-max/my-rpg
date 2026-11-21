@@ -7,6 +7,18 @@ body {
   overscroll-behavior: none;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+#field-screen:not(.hidden) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
 .sprite {
   width: 64px;
   height: 64px;
@@ -34,7 +46,9 @@ button {
 .viewport {
   position: relative;
   overflow: hidden;
-  margin: 8px auto 0;
+  flex: 1;
+  width: 100%;
+  margin: 0;
 }
 
 .map {
@@ -46,8 +60,8 @@ button {
 
 .tile {
   position: absolute;
-  width: 32px;
-  height: 32px;
+  width: var(--tile);
+  height: var(--tile);
   image-rendering: pixelated;
 }
 
