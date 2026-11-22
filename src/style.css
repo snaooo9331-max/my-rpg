@@ -188,6 +188,33 @@ button {
   padding: 10px 12px;
 }
 
+.item-row .stepper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
+
+.item-row .stepper button {
+  width: 52px;
+  padding: 6px 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.stepper .count {
+  min-width: 1.5em;
+  text-align: center;
+  font-size: 17px;
+}
+
+.confirm {
+  width: 100%;
+  margin: 12px 0 0;
+  font-size: 17px;
+  padding: 14px;
+}
+
 button:disabled {
   opacity: 0.5;
   cursor: default;
@@ -374,4 +401,16 @@ button:disabled {
 
 .stat-row:last-child {
   border-bottom: none;
+}
+
+.upgrade-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 15px;
+}
+
+.upgrade-value .after {
+  color: #7ee07e;
+  font-weight: bold;
 }

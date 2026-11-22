@@ -1,7 +1,7 @@
 import { changeScene } from "./scene";
 import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL, expToNext } from "./player";
 import { ITEMS, findItem, type ItemData } from "./items"; 
-import { STAT_UPGRADES, STAT_LABELS } from "./upgrades";
+import { STAT_UPGRADES, STAT_LABELS, type StatName } from "./upgrades";
 import { deleteSave, saveGame } from "./save";
 
 export type MenuTab = "status" | "equip" | "stats" | "rebirth" | "data";
@@ -42,25 +42,27 @@ function itemButton(item: ItemData): string {
   return `<button data-action="buy" data-id="${item.id}">買う ${item.price}G</button>`;
 }
 
-function useStatPoint(id: string) {
-  const upgrade = STAT_UPGRADES.find((s) => s.id === id);
-  if (!upgrade || player.statPoints <= 0) {
-    return;
+function confirmUpgrades() {
+  message = "";
+  for (const s of STAT_UPGRADES) {
+    const count = pending[s.stat];
+    if (count === 0) {
+      continue;
+    }
+    player[s.stat] += s.amount * count;
+    if (s.stat === "maxHp") {
+      player.hp += s.amount * count;
+    }
+    player.statPoints -= count;
+    message += `${s.name}が${s.amount * count}上がった！<br>`;
   }
-
-  player.statPoints -= 1;
-  player[upgrade.stat] += upgrade.amount;
-
-  if (upgrade.stat === "maxHp") {
-    player.hp += upgrade.amount;
-  }
-
-  message = `${STAT_LABELS[upgrade.stat]}が ${upgrade.amount}上がった！`;
+  resetPending();
 }
 
 function handleItem(action: string, id: string) {
-  if (action === "stat") {
-    useStatPoint(id);
+  if (action === "plus" || action === "minus") {
+    changePending(id, action === "plus" ? 1 : -1);
+    message = "";
     renderMenu();
     return;
   }
@@ -90,6 +92,40 @@ function handleItem(action: string, id: string) {
   }
 
   renderMenu();
+}
+
+const CURRENT_STAT: Record<StatName, () => number> = {
+  attack: getAttack,
+  defense: getDefense,
+  maxHp: () => player.maxHp,
+};
+
+let pending: Record<StatName, number> = { attack: 0, defense: 0, maxHp: 0 };
+
+function resetPending() {
+  pending = {attack: 0, defense: 0, maxHp: 0 };
+}
+
+function pendingTotal(): number {
+  return pending.attack + pending.defense + pending.maxHp;
+}
+
+function remainingPoints(): number {
+  return player.statPoints - pendingTotal();
+}
+
+function changePending(id: string, diff: number) {
+  const upgrade = STAT_UPGRADES.find((s) => s.id === id);
+  if (!upgrade) {
+    return;
+  }
+  if (diff > 0 && remainingPoints() <= 0) {
+    return;
+  }
+  if (diff < 0 && pending[upgrade.stat] <= 0) {
+    return;
+  }
+  pending[upgrade.stat] += diff;
 }
 
 function statusSection(): string {
@@ -131,16 +167,30 @@ function equipSection(): string {
 }
 
 function statsSection(): string {
-  const rows = STAT_UPGRADES.map((s) => `
-    <li class="item-row">
-      <span>${s.name} (${STAT_LABELS[s.stat]} + ${s.amount}) </span>
-      <button data-action="stat" data-id="${s.id}" ${player.statPoints <= 0 ? "disabled" : ""}>ポイントを使う</button>
-    </li>
-  `).join("");
+  const rows = STAT_UPGRADES.map((s) => {
+    const now = CURRENT_STAT[s.stat]();
+    const count = pending[s.stat];
+    const valueText = count > 0 ? `${now} → <span class="after">${now + s.amount * count}</span>` : `${now}`;
+
+    return `
+      <li class="item-row">
+        <div class="upgrade-info">
+          <span>${s.name} (${STAT_LABELS[s.stat]}) </span>
+          <span class="upgrade-value">${valueText}</span>
+        </div>
+        <div class="stepper">
+          <button data-action="minus" data-id="${s.id}" ${count <= 0 ? "disabled" : ""}>ー</button>
+          <span class="count">${count}</span>
+          <button data-action="plus" data-id="${s.id}" ${remainingPoints() <= 0 ? "disabled" : ""}>＋</button>
+        </div>
+      </li>
+    `;
+  }).join("");
 
   return `
-    <h3>強化ポイント (のこり ${player.statPoints}) </h3>
+    <h3>強化ポイント (のこり ${remainingPoints()}) </h3>
     <ul class="item-list">${rows}</ul>
+    <button id="confirm-stats" class="confirm" ${pendingTotal() === 0 ? "disabled" : ""}>けってい</button>
   `;
 }
 
@@ -193,6 +243,7 @@ function renderTop() {
     button.addEventListener("click", () => {
       currentView = button.dataset.tab as MenuTab;
       message = "";
+      resetPending();
       renderMenu();
     });
   });
@@ -222,6 +273,7 @@ function renderSection(tab: MenuTab) {
   menuRoot.querySelector("#menu-back")?.addEventListener("click", () => {
     currentView = "top";
     message = "";
+    resetPending();
     renderMenu();
   });
 
@@ -246,12 +298,18 @@ function renderSection(tab: MenuTab) {
       renderMenu();
     }
   });
+
+  menuRoot.querySelector("#confirm-stats")?.addEventListener("click", () => {
+    confirmUpgrades();
+    renderMenu();
+  });
 }
 
 export function openMenu(closeCallback: () => void) {
   currentView = "top";
   onClose = closeCallback;
   message = "";
+  resetPending();
   renderMenu();
   changeScene("menu");
 }

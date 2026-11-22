@@ -24,7 +24,7 @@ export const MONSTERS: Record<string, MonsterData> = {
         maxHp: 25,
         attack: 7,
         defense: 3,
-        exp: 8,
+        exp: 10,
         gold: 12,
     },
 };
