@@ -410,3 +410,29 @@ button:disabled {
   color: #7ee07e;
   font-weight: bold;
 }
+
+.sub-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sub-tabs button {
+  margin: 0;
+  padding: 10px;
+  font-size: 15px;
+  background-color: #444455;
+  color: #ffffff;
+}
+
+.sub-tabs button.active {
+  background-color: #f5a623;
+  color: #1e1e2e;
+}
+
+.equipped-now {
+  font-size: 14px;
+  margin: 4px 0;
+  opacity: 0.85;
+}

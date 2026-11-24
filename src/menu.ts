@@ -1,6 +1,6 @@
 import { changeScene } from "./scene";
 import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL, expToNext } from "./player";
-import { ITEMS, findItem, type ItemData } from "./items"; 
+import { ITEMS, ITEM_TYPES, ITEM_TYPE_LABELS, findItem, type ItemData, type ItemType } from "./items"; 
 import { STAT_UPGRADES, STAT_LABELS, type StatName } from "./upgrades";
 import { deleteSave, saveGame } from "./save";
 
@@ -23,6 +23,7 @@ let currentView: MenuView = "top";
 let menuRoot: HTMLElement | null = null;
 let onClose: (() => void) | null = null;
 let message = "";
+let equipType: ItemType = "weapon";
 
 function isEquipped(item: ItemData): boolean {
   return player.weapon === item.id || player.armor === item.id;
@@ -153,7 +154,15 @@ function statusSection(): string {
 }
 
 function equipSection(): string {
-  const rows = ITEMS.map((item) => `
+  const tabs = ITEM_TYPES.map((type) => `
+    <button class="${type === equipType ? "active" : ""}" data-equip-type="${type}">${ITEM_TYPE_LABELS[type]}</button>
+  `).join("");
+
+  const current = findItem(equipType === "weapon" ? player.weapon : player.armor);
+
+  const rows = ITEMS
+  .filter((item) => item.type === equipType)
+  .map((item) => `
     <li class="item-row">
       <span>${item.name} (${itemStats(item)})</span>
       ${itemButton(item)}
@@ -161,7 +170,8 @@ function equipSection(): string {
   `).join("");
 
   return `
-    <h3>装備</h3>
+    <div class="sub-tabs">${tabs}</div>
+    <p class="equipped-now">いまの${ITEM_TYPE_LABELS[equipType]}:${current?.name ?? "なし"}</p>
     <ul class="item-list">${rows}</ul>
   `;
 }
@@ -302,6 +312,14 @@ function renderSection(tab: MenuTab) {
   menuRoot.querySelector("#confirm-stats")?.addEventListener("click", () => {
     confirmUpgrades();
     renderMenu();
+  });
+
+  menuRoot.querySelectorAll<HTMLButtonElement>("[data-equip-type]").forEach((button) => {
+    button.addEventListener("click", () => {
+      equipType = button.dataset.equipType as ItemType;
+      message = "";
+      renderMenu();
+    });
   });
 }
 

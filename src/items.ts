@@ -1,4 +1,10 @@
 export type ItemType = "weapon" | "armor";
+export const ITEM_TYPES: ItemType[] = ["weapon", "armor"];
+
+export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
+  weapon: "武器",
+  armor: "防具",
+};
 
 export type ItemData = {
   id: string;
