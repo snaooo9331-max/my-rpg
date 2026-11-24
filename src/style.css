@@ -1,121 +1,166 @@
+/* =====================================================
+   style.css
+   ゲーム全体の見た目
+   main.ts の import "./style.css" で読み込まれる
+
+   読み方のコツ
+     .名前  … class="名前" の要素（例：.window）
+     #名前  … id="名前" の要素（例：#auto-button）
+     A B    … A の中にある B（例：.item-row button）
+     A.B    … A と B の両方の class を持つ要素（例：.bar-fill.hp）
+   同じ要素に同じ項目が2回書かれたら、あとに書いたほうが勝つ
+   ===================================================== */
+
+
+/* =====================================================
+   全体
+   ===================================================== */
+
+/* body … ページ全体。暗い背景に白い文字 */
 body {
   margin: 0;
   background-color: #1e1e2e;
   color: #ffffff;
   font-family: sans-serif;
   text-align: center;
-  overscroll-behavior: none;
+  overscroll-behavior: none;   /* スマホで引っぱったときに画面がびよーんと動かないように */
 }
 
+/* html と body … 画面の高さぴったりにして、スクロールさせない */
 html, body {
   height: 100%;
   margin: 0;
-  overflow: hidden;
+  overflow: hidden;            /* はみ出た分は見せない */
 }
 
-#field-screen:not(.hidden) {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-}
-
+/* .sprite … キャラの絵（64×64） */
 .sprite {
   width: 64px;
   height: 64px;
-  image-rendering: pixelated;
+  image-rendering: pixelated;  /* ドット絵を拡大してもぼやけないように */
 }
 
+/* .hidden … 隠す。scene.ts の changeScene などで付け外しする */
 .hidden {
   display: none;
 }
 
+/* button … すべてのボタンの基本の見た目（オレンジ）
+   ほかの場所で色や大きさを上書きしている */
 button {
   font-size: 18px;
-  padding: 12px 24px;
-  margin: 8px;
+  padding: 12px 24px;          /* 内側の余白（上下 12px、左右 24px） */
+  margin: 8px;                 /* 外側の余白 */
   border: none;
-  border-radius: 8px;
+  border-radius: 8px;          /* 角を丸く */
   background-color: #f5a623;
   color: #1e1e2e;
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
+  cursor: pointer;             /* マウスをのせると指のマーク */
+  touch-action: manipulation;  /* スマホで2回タップしても拡大しないように */
+  user-select: none;           /* 長押しで文字が選択されないように */
+  -webkit-user-select: none;   /* ↑ と同じ（iPhone の Safari 用） */
 }
 
+
+/* =====================================================
+   フィールド：地図
+   ===================================================== */
+
+/* .viewport … 地図を見るための窓。窓の外にはみ出た地図は見せない */
 .viewport {
-  position: relative;
+  position: relative;          /* 中の .map を、この窓を基準に置くため */
   overflow: hidden;
-  flex: 1;
+  flex: 1;                     /* HUD の残りの高さを全部使う */
   width: 100%;
   margin: 0;
 }
 
+/* .map … 地図全体。field.ts の updateCamera が transform で動かして、勇者を追いかける */
 .map {
   position: absolute;
   left: 0;
   top: 0;
-  transition: transform 0.1s;
+  transition: transform 0.1s;  /* 0.1秒かけてなめらかに動く */
 }
 
+/* .tile … 地図の1マス（草・木・水・道、勇者、敵）
+   --tile … 1マスの大きさ。field.ts の setupField で setProperty して決めている */
 .tile {
-  position: absolute;
+  position: absolute;          /* left / top で場所を決める */
   width: var(--tile);
   height: var(--tile);
   image-rendering: pixelated;
 }
 
+/* .hero … 勇者。歩くと 0.1秒かけてなめらかに移動 */
 .hero {
   transition: left 0.1s, top 0.1s;
 }
 
+
+/* =====================================================
+   戦闘画面・メニュー画面
+   ===================================================== */
+
+/* 戦闘画面とメニュー画面（表示されているとき）… 縦に並べる
+   box-sizing: border-box … padding を含めて高さ 100dvh にする（はみ出さないように） */
 #battle-screen:not(.hidden), #menu-screen:not(.hidden) {
   display: flex;
   flex-direction: column;
   height: 100dvh;
   padding: 8px;
-  gap: 8px;
+  gap: 8px;                    /* 中の要素どうしのすき間 */
   box-sizing: border-box;
 }
 
+/* .battle-player … 戦闘画面の上の、勇者のレベルとHP */
 .battle-player {
   padding: 6px 10px;
   font-size: 13px;
   text-align: left;
 }
 
+/* .battle-stage … 敵の絵と敵のHPを、真ん中に置く場所
+   flex: 1 … 残りの高さを全部使う */
 .battle-stage {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: center;         /* 横の真ん中 */
+  justify-content: center;     /* 縦の真ん中 */
   gap: 8px;
 }
 
+/* .battle-enemy … 敵の絵（大きめ） */
 .battle-enemy {
   width: 144px;
   height: 144px;
   image-rendering: pixelated;
 }
 
+/* .enemy-info … 敵の名前とHPバー */
 .enemy-info {
   width: 160px;
   font-size: 13px;
 }
 
+/* 敵のHPバーの色（オレンジ） */
 .bar-fill.enemy {
   background-color: #e5a03a;
 }
 
+/* .battle-log … 「〇〇のこうげき！」などのメッセージ
+   min-height … 文が短くても高さを確保して、画面がガタガタしないように */
 .battle-log {
   margin: 0;
-  min-height: 3.5em;
+  min-height: 3.5em;           /* em … 文字の大きさの何倍か */
   padding: 10px 14px;
   text-align: left;
   font-size: 15px;
 }
 
+/* .commands … たたかう・にげる・オート のボタンを3列に並べる
+   1fr … 残りの幅を等分した1つ分 */
 .commands {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -123,13 +168,16 @@ button {
   padding: 8px;
 }
 
-.commnads button {
+/* コマンドのボタン */
+.commands button {
   margin: 0;
-  white-space: nowrap;
+  white-space: nowrap;         /* 文字を折り返さない */
   font-size: 15px;
   padding: 12px 4px;
 }
 
+/* .menu-content … メニューの中身（ステータスや装備の一覧）
+   長くなったら、ここだけ縦にスクロール */
 .menu-content {
   flex: 1;
   overflow-y: auto;
@@ -137,50 +185,65 @@ button {
   text-align: left;
 }
 
+/* メニューの中の見出し（「強化ポイント (のこり 3)」など） */
 .menu-content h3 {
-  margin: 4px 0 8px;
+  margin: 4px 0 8px;           /* 上 4px、左右 0、下 8px */
   font-size: 15px;
 }
 
+/* .menu-close … メニューの「とじる」（ウィンドウと同じ暗い色） */
 .menu-close {
   margin: 0;
-  background-color: rgba(20, 20, 40, 0.85);
+  background-color: rgba(20, 20, 40, 0.85);   /* rgba の最後 … 透明度（1で不透明） */
   color: #ffffff;
 }
 
+/* #auto-button … オートのボタン（OFFのときは灰色） */
 #auto-button {
   background-color: #444455;
   color: #ffffff;
 }
 
+/* オートが ON のとき（battle.ts の updateAutoButton が auto-on を付け外し）… 緑 */
 #auto-button.auto-on {
   background-color: #4caf50;
   color: #ffffff;
 }
 
+/* .status … メニューの下のメッセージや、転生の説明文 */
 .status {
   font-size: 14px;
   margin: 8px 0;
 }
 
+
+/* =====================================================
+   メニュー：一覧の行（そうび・つよさ）
+   ===================================================== */
+
+/* .item-list … 一覧。<ul> の点と左の余白を消す */
 .item-list {
   list-style: none;
   padding: 0;
 }
 
+/* .item-row … 一覧の1行。上に名前、下にボタン（縦に並べる）
+   align-items: stretch … 中身を横いっぱいに広げる */
 .item-row {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);   /* 行の下に薄い線 */
 }
 
+/* 最後の行だけ下の線を消す（:last-child … 最後の子） */
 .item-row:last-child {
   border-bottom: none;
 }
 
+/* 行の中のボタン（買う・装備する）… 横いっぱい */
 .item-row button {
   width: 100%;
   margin: 0;
@@ -188,13 +251,16 @@ button {
   padding: 10px 12px;
 }
 
+/* .stepper … つよさの「ー 数 ＋」。右に寄せて横に並べる */
 .item-row .stepper {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-end;   /* 右寄せ */
   align-items: center;
   gap: 14px;
 }
 
+/* 「ー」「＋」のボタン … 上の .item-row button の width: 100% を上書きして小さくする
+   （.item-row .stepper button のほうが詳しく書いてあるので勝つ） */
 .item-row .stepper button {
   width: 52px;
   padding: 6px 0;
@@ -202,12 +268,15 @@ button {
   font-weight: bold;
 }
 
+/* 「ー」と「＋」の間の数
+   min-width … 数が1けたでも2けたでも、ボタンの位置がずれないように */
 .stepper .count {
   min-width: 1.5em;
   text-align: center;
   font-size: 17px;
 }
 
+/* .confirm … つよさの「けってい」ボタン（横いっぱい） */
 .confirm {
   width: 100%;
   margin: 12px 0 0;
@@ -215,18 +284,13 @@ button {
   padding: 14px;
 }
 
+/* 押せないボタン（disabled）… 半透明にして、指のマークも出さない */
 button:disabled {
   opacity: 0.5;
   cursor: default;
 }
 
-.message {
-  min-height: 1.5em;
-  color: #f5a623;
-  font-size: 14px;
-  padding: 0 16px;
-}
-
+/* .danger … 「データを消す」（赤い文字で、ほかのボタンから離して置く） */
 .danger {
   background-color: #444455;
   color: #ff6b6b;
@@ -234,17 +298,29 @@ button:disabled {
   margin-top: 32px;
 }
 
+
+/* =====================================================
+   フィールド：HUD（上のウィンドウ）
+   ===================================================== */
+
+/* フィールド画面では、スワイプしてもページがスクロール・拡大しないように
+   （スワイプは field.ts で自分で受け取って、勇者を歩かせる） */
 #field-screen {
   touch-action: none;
 }
 
+/* フィールド画面（表示されているとき）… 縦に並べる（上にHUD、下に地図）
+   :not(.hidden) … hidden が付いていないときだけ
+   （.hidden の display: none に負けないように、こう書いている）
+   position: relative … 中の .message（position: absolute）を、この画面を基準に置くため */
 #field-screen:not(.hidden) {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: 100dvh;              /* dvh … スマホのアドレスバーを除いた、本当に見えている高さ */
   position: relative;
 }
 
+/* .window … DQ風のウィンドウ（暗い背景＋白いふち）。いろいろな場所で使っている */
 .window {
   background-color: rgba(20, 20, 40, 0.85);
   border: 3px solid #ffffff;
@@ -252,30 +328,37 @@ button:disabled {
   color: #ffffff;
 }
 
+/* .hud … フィールドの上の部分。左にステータス、右にゴールドとメニュー
+   1fr auto … 右は中身に合わせた幅、左は残り全部 */
 .hud {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
-  align-items: stretch;
+  align-items: stretch;        /* 左右の高さをそろえる */
   padding: 8px;
 }
 
+/* .hud-status … 左のウィンドウ（レベル・HP・次のレベルまで） */
 .hud-status {
   padding: 6px 10px;
   font-size: 13px;
   text-align: left;
 }
 
+/* レベルの文字（少し大きく太く） */
 .hud-level {
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 2px;
 }
 
+/* 「次のレベルまで」の文字（小さめ） */
 .hud-exp {
   font-size: 12px;
 }
 
+/* .hud-side … 右側。ゴールドとメニューのボタンを上下に同じ高さで並べる
+   1fr 1fr … 高さを2等分 */
 .hud-side {
   display: grid;
   grid-template-rows: 1fr 1fr;
@@ -283,6 +366,7 @@ button:disabled {
   min-width: 96px;
 }
 
+/* .hud-gold … ゴールドのウィンドウ */
 .hud-gold {
   display: flex;
   align-items: center;
@@ -291,47 +375,67 @@ button:disabled {
   font-size: 15px;
   font-weight: bold;
   text-align: left;
-  white-space: nowrap;
+  white-space: nowrap;         /* 「1234G」が途中で折り返さないように */
 }
 
+/* 「ゴールド」の小さい文字 */
 .gold-label {
   font-size: 11px;
   font-weight: normal;
   opacity: 0.8;
 }
 
+/* .hud-row … 「HP」と「25 / 30」を左右の端に置く */
 .hud-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between;   /* 両端に寄せる */
   margin-bottom: 4px;
 }
 
+/* 「HP」などの小さい文字 */
 .hud-label {
   font-size: 11px;
 }
 
+
+/* =====================================================
+   HPバー（フィールドと戦闘で共通）
+   ===================================================== */
+
+/* .bar … バーの入れ物（灰色の部分） */
 .bar {
   height: 8px;
   background-color: #444455;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: hidden;            /* 中の .bar-fill の角も丸く見せる */
   margin: 2px 0 6px;
 }
 
+/* .bar-fill … 色がついている部分。ui.ts の setBar が width を変える
+   transition … 0.3秒かけて減る（ダメージがわかりやすい） */
 .bar-fill {
   height: 100%;
   width: 100%;
   transition: width 0.3s;
 }
 
+/* 勇者のHPバー（緑） */
 .bar-fill.hp {
   background-color: #4caf50;
 }
 
+/* HPが少ないとき … 赤
+   HPが30%以下になると、field.ts / battle.ts が low を付ける */
 .bar-fill.hp.low {
   background-color: #e53935;
 }
 
+
+/* =====================================================
+   メニュー：ボタンと見出し
+   ===================================================== */
+
+/* .menu-toggle … フィールドの右上の「メニュー」ボタン（ウィンドウと同じ色） */
 .menu-toggle {
   margin: 0;
   padding: 4px 14px;
@@ -340,6 +444,8 @@ button:disabled {
   color: #ffffff;
 }
 
+/* .menu-header … メニューの見出し。左に題名、右に「もどる」
+   min-height … 「もどる」がない最初の画面でも同じ高さに */
 .menu-header {
   display: flex;
   justify-content: space-between;
@@ -350,12 +456,15 @@ button:disabled {
   min-height: 38px;
 }
 
+/* 見出しの中のボタン（「もどる」） */
 .menu-header button {
   margin: 0;
   font-size: 14px;
   padding: 8px 12px;
 }
 
+/* .menu-list … メニューの最初の画面。ボタンを2列に並べる
+   align-content: start … ボタンを上に詰める（縦に引きのばさない） */
 .menu-list {
   flex: 1;
   display: grid;
@@ -365,13 +474,25 @@ button:disabled {
   padding: 12px;
 }
 
+/* メニューの最初の画面のボタン（大きめ） */
 .menu-list button {
   margin: 0;
   font-size: 18px;
   padding: 24px 8px;
 }
 
+
+/* =====================================================
+   フィールド：メッセージ
+   ===================================================== */
+
+/* .message … フィールドのメッセージ（オレンジの文字）。地図の上に重ねて、下の方に出す
+   position: absolute … ほかの要素を押しのけずに、上に重なる
+   z-index … 重なる順番。大きいほど手前（地図より手前に）
+   .window より下に書いてあるので、文字の色は .window の白ではなく、このオレンジが勝つ */
 .message {
+  min-height: 1.5em;
+  color: #f5a623;
   position: absolute;
   left: 8px;
   right: 8px;
@@ -383,10 +504,17 @@ button:disabled {
   z-index: 10;
 }
 
+/* メッセージが空のときは隠す（:empty … 中身が何もない） */
 .message:empty {
   display: none;
 }
 
+
+/* =====================================================
+   メニュー：ステータス・つよさ・そうび
+   ===================================================== */
+
+/* .stat-row … ステータス画面の1行。左に名前、右に値 */
 .stat-row {
   display: flex;
   justify-content: space-between;
@@ -399,6 +527,8 @@ button:disabled {
   border-bottom: none;
 }
 
+/* .upgrade-info … つよさ画面の、能力の名前と「15 → 17」
+   align-items: baseline … 文字の下の線をそろえる */
 .upgrade-info {
   display: flex;
   justify-content: space-between;
@@ -406,23 +536,30 @@ button:disabled {
   font-size: 15px;
 }
 
+/* 「→ 17」の、上がったあとの数（緑の太字） */
 .upgrade-value .after {
   color: #7ee07e;
   font-weight: bold;
 }
 
+/* .equipped-now … 「いまの武器 : 〇〇」 */
 .equipped-now {
   font-size: 14px;
   margin: 4px 0;
   opacity: 0.85;
 }
 
+/* .slot-list … そうび画面の部位の一覧 */
 .slot-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
+/* .slot-row … 部位の1行。3列に並べる（部位の名前・装備の名前・効果）
+   6.5em … 部位の名前の幅を固定（「アクセサリー」が入る幅）
+   1fr   … 装備の名前は残り全部
+   auto  … 効果は中身に合わせた幅 */
 .slot-row {
   display: grid;
   grid-template-columns: 6.5em 1fr auto;
@@ -431,27 +568,31 @@ button:disabled {
   padding: 12px 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 15px;
-  cursor: pointer;
+  cursor: pointer;             /* 押せることがわかるように */
 }
 
 .slot-row:last-child {
   border-bottom: none;
 }
 
+/* 部位の名前（太字） */
 .slot-label {
   font-weight: bold;
 }
 
+/* 「そうびなし」（none が付いたとき）… 薄くする */
 .slot-item.none {
   opacity: 0.5;
 }
 
+/* 効果（「攻撃+3」など） */
 .slot-bonus {
   font-size: 13px;
   opacity: 0.85;
   white-space: nowrap;
 }
 
+/* .unequip … 「はずす」ボタン（灰色、横いっぱい） */
 .unequip {
   width: 100%;
   margin: 4px 0 8px;
