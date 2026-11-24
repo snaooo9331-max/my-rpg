@@ -1,4 +1,4 @@
-import { findItem } from "./items";
+import { findItem, SLOTS, type ItemData, type Slot } from "./items";
 
 export type Character = {
     name: string;
@@ -10,8 +10,7 @@ export type Character = {
     defense: number;
     gold: number;
     statPoints: number;
-    weapon: string | null;
-    armor: string | null;
+    equipment: Record<Slot, string | null>;
     ownedItems: string[];
     rebirthCount: number;
     x: number;
@@ -27,6 +26,19 @@ const BASE_STATS = {
 export const START_X = 2;
 export const START_Y = 2;
 
+export function emptyEquipment(): Record<Slot, string | null> {
+  return {
+    weapon: null,
+    head: null,
+    shield: null,
+    body: null,
+    hands: null,
+    feet: null,
+    accessory1: null,
+    accessory2: null,
+  };
+}
+
 export const player: Character = {
     name: "勇者",
     level: 1,
@@ -37,8 +49,7 @@ export const player: Character = {
     defense: BASE_STATS.defense,
     gold: 0,
     statPoints: 0,
-    weapon: null,
-    armor: null,
+    equipment: emptyEquipment(),
     ownedItems: [],
     rebirthCount: 0,
     x: START_X,
@@ -67,16 +78,26 @@ export function gainExp(amount: number): string[] {
     return messages;
 }
 
+function equippedItems(): ItemData[] {
+  return SLOTS
+    .map((slot) => findItem(player.equipment[slot]))
+    .filter((item) => item !== undefined);
+}
+
 export function getAttack(): number {
-    const weapon = findItem(player.weapon);
-    const armor = findItem(player.armor);
-    return player.attack + (weapon?.attack ?? 0) + (armor?.attack ?? 0);
+  let total = player.attack;
+  for (const item of equippedItems()) {
+    total += item.attack;
+  }
+  return total;
 }
 
 export function getDefense(): number {
-    const weapon = findItem(player.weapon);
-    const armor = findItem(player.armor);
-    return player.defense + (weapon?.defense ?? 0) + (armor?.defense ?? 0);
+  let total = player.defense;
+  for (const item of equippedItems()) {
+    total += item.defense;
+  }
+  return total;
 }
 
 

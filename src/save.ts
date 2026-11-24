@@ -1,4 +1,4 @@
-import { player, type Character } from "./player";
+import { player, emptyEquipment, type Character } from "./player";
 
 const SAVE_KEY = "myRpgSave";
 let saveEnabled = true;
@@ -31,11 +31,26 @@ export function loadGame(): number | null {
     }
     const data = JSON.parse(saved) as SaveData;
 
-    const savedPlayer = data.player as Partial<Character> & { skillPoints?: number };
+    const savedPlayer = data.player as Partial<Character> & {
+      skillPoints?: number;
+      weapon?: string | null;
+      armor?: string | null;
+    };
+
     if (savedPlayer.skillPoints !== undefined) {
       savedPlayer.statPoints ??= savedPlayer.skillPoints;
       delete savedPlayer.skillPoints;
     }
+
+    savedPlayer.equipment = {
+      ...emptyEquipment(),
+      weapon: savedPlayer.weapon ?? null,
+      body: savedPlayer.armor ?? null,
+      ...savedPlayer.equipment,
+    };
+    delete savedPlayer.weapon;
+    delete savedPlayer.armor;
+    
     Object.assign(player, savedPlayer);
 
     if (typeof player.gold !== "number" || Number.isNaN(player.gold)) {

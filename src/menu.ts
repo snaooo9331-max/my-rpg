@@ -1,6 +1,6 @@
 import { changeScene } from "./scene";
 import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL, expToNext } from "./player";
-import { ITEMS, ITEM_TYPES, ITEM_TYPE_LABELS, findItem, type ItemData, type ItemType } from "./items"; 
+import { ITEMS, SLOTS, SLOT_TYPE, SLOT_LABELS, findItem, bonusText, type ItemData, type Slot } from "./items"; 
 import { STAT_UPGRADES, STAT_LABELS, type StatName } from "./upgrades";
 import { deleteSave, saveGame } from "./save";
 
@@ -23,24 +23,16 @@ let currentView: MenuView = "top";
 let menuRoot: HTMLElement | null = null;
 let onClose: (() => void) | null = null;
 let message = "";
-let equipType: ItemType = "weapon";
+let equipSlot: Slot | null = null;
 
-function isEquipped(item: ItemData): boolean {
-  return player.weapon === item.id || player.armor === item.id;
-}
-
-function itemStats(item: ItemData): string {
-  return item.type === "weapon" ? `攻撃力 +${item.attack}` : `守備力 +${item.defense}`;
-}
-
-function itemButton(item: ItemData): string {
-  if (isEquipped(item)) {
+function itemButton(item: ItemData, slot: Slot): string {
+  if (player.equipment[slot] === item.id) {
     return `<button disabled>装備中</button>`;
   }
   if (player.ownedItems.includes(item.id)) {
     return `<button data-action="equip" data-id="${item.id}">装備する</button>`;
   }
-  return `<button data-action="buy" data-id="${item.id}">買う ${item.price}G</button>`;
+  return `<button data-action="buy" data-id="${item.id}">買う ${item.price}G</button>`
 }
 
 function confirmUpgrades() {
@@ -67,12 +59,22 @@ function handleItem(action: string, id: string) {
     renderMenu();
     return;
   }
-
+  
+  if (action === "unequip") {
+    if (equipSlot !== null) {
+      const item = findItem(player.equipment[equipSlot]);
+      player.equipment[equipSlot] = null;
+      message = `${item?.name ?? "そうび"}をはずした`;
+    }
+    renderMenu();
+    return;
+  }
+  
   const item = ITEMS.find((i) => i.id === id);
   if (!item) {
     return;
   }
-
+  
   if (action === "buy") {
     if (player.gold < item.price) {
       message = "ゴールドが足りない！";
@@ -83,12 +85,13 @@ function handleItem(action: string, id: string) {
     }
   }
 
-  if (action === "equip") {
-    if (item.type === "weapon") {
-      player.weapon = item.id;
-    } else {
-      player.armor = item.id;
+  if (action === "equip" && equipSlot !== null) {
+    for (const slot of SLOTS) {
+      if (player.equipment[slot] === item.id) {
+        player.equipment[slot] = null;
+      }
     }
+    player.equipment[equipSlot] = item.id;
     message = `${item.name}を装備した！`;
   }
 
@@ -130,8 +133,6 @@ function changePending(id: string, diff: number) {
 }
 
 function statusSection(): string {
-  const weapon = findItem(player.weapon);
-  const armor = findItem(player.armor);
 
   const rows: [string, string][] = [
     ["レベル", `${player.level}`],
@@ -142,8 +143,7 @@ function statusSection(): string {
     ["所持金", `${player.gold}G`],
     ["強化ポイント", `${player.statPoints}`],
     ["転生回数", `${player.rebirthCount}`],
-    ["武器", weapon?.name ?? "なし"],
-    ["防具", armor?.name ?? "なし"],
+    ...SLOTS.map((slot): [string, string] => [SLOT_LABELS[slot], findItem(player.equipment[slot])?.name ?? "なし"]),
   ];
 
   const html = rows.map(([label, value]) => `
@@ -153,27 +153,47 @@ function statusSection(): string {
   return `<ul class="item-list">${html}</ul>`;
 }
 
-function equipSection(): string {
-  const tabs = ITEM_TYPES.map((type) => `
-    <button class="${type === equipType ? "active" : ""}" data-equip-type="${type}">${ITEM_TYPE_LABELS[type]}</button>
-  `).join("");
+function slotListHtml(): string {
+  const rows = SLOTS.map((slot) => {
+    const item = findItem(player.equipment[slot]);
+    return `
+      <li class="slot-row" data-slot="${slot}">
+        <span class="slot-label">${SLOT_LABELS[slot]}</span>
+        <span class="slot-item ${item ? "" : "none"}">${item?.name ?? "そうびなし"}</span>
+        <span class="slot-bonus">${item ? bonusText(item) : "-"}</span>
+      </li>
+    `;
+  }).join("");
 
-  const current = findItem(equipType === "weapon" ? player.weapon : player.armor);
+  return `<ul class="slot-list">${rows}</ul>`;
+}
+
+function slotItemsHtml(slot: Slot): string {
+  const current = findItem(player.equipment[slot]);
+  const currentText = current ? `${current.name} (${bonusText(current)})` : "そうびなし";
 
   const rows = ITEMS
-  .filter((item) => item.type === equipType)
-  .map((item) => `
-    <li class="item-row">
-      <span>${item.name} (${itemStats(item)})</span>
-      ${itemButton(item)}
-    </li>
-  `).join("");
+    .filter((item) => item.type === SLOT_TYPE[slot])
+    .map((item) => `
+      <li class="item-row">
+        <span>${item.name} (${bonusText(item)}) </span>
+        ${itemButton(item, slot)}
+      </li>
+    `)
+    .join("");
 
   return `
-    <div class="sub-tabs">${tabs}</div>
-    <p class="equipped-now">いまの${ITEM_TYPE_LABELS[equipType]}:${current?.name ?? "なし"}</p>
+    <p class="equipped-now">いまの${SLOT_LABELS[slot]} : ${currentText}</p>
+    <button data-action="unequip" class="unequip" ${current ? "" : "disabled"}>はずす</button>
     <ul class="item-list">${rows}</ul>
   `;
+}
+
+function equipSection(): string {
+  if (equipSlot === null) {
+    return slotListHtml();
+  }
+  return slotItemsHtml(equipSlot);
 }
 
 function statsSection(): string {
@@ -253,6 +273,7 @@ function renderTop() {
     button.addEventListener("click", () => {
       currentView = button.dataset.tab as MenuTab;
       message = "";
+      equipSlot = null;
       resetPending();
       renderMenu();
     });
@@ -269,9 +290,11 @@ function renderSection(tab: MenuTab) {
     return;
   }
 
+  const title = tab === "equip" && equipSlot !== null ? `${TAB_LABELS[tab]} : ${SLOT_LABELS[equipSlot]}` : TAB_LABELS[tab];
+
   menuRoot.innerHTML = `
     <div class="window menu-header">
-      <span>${TAB_LABELS[tab]}</span>
+      <span>${title}</span>
       <button id="menu-back">もどる</button>
     </div>
     <div class="window menu-content">
@@ -281,9 +304,13 @@ function renderSection(tab: MenuTab) {
   `;
 
   menuRoot.querySelector("#menu-back")?.addEventListener("click", () => {
-    currentView = "top";
+    if (currentView === "equip" && equipSlot !== null) {
+      equipSlot = null;
+    } else {
+      currentView = "top";
+      resetPending();
+    }
     message = "";
-    resetPending();
     renderMenu();
   });
 
@@ -314,9 +341,9 @@ function renderSection(tab: MenuTab) {
     renderMenu();
   });
 
-  menuRoot.querySelectorAll<HTMLButtonElement>("[data-equip-type]").forEach((button) => {
-    button.addEventListener("click", () => {
-      equipType = button.dataset.equipType as ItemType;
+  menuRoot.querySelectorAll<HTMLElement>("[data-slot]").forEach((row) => {
+    row.addEventListener("click", () => {
+      equipSlot = row.dataset.slot as Slot;
       message = "";
       renderMenu();
     });
@@ -327,6 +354,7 @@ export function openMenu(closeCallback: () => void) {
   currentView = "top";
   onClose = closeCallback;
   message = "";
+  equipSlot = null;
   resetPending();
   renderMenu();
   changeScene("menu");
