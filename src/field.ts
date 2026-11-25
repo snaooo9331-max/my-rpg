@@ -228,6 +228,13 @@ function updateCamera() {
   if (!map || !viewport) {
     return;
   }
+
+  // viewport.clientWidth … 地図の窓の幅（画面が hidden のときは 0 になる）
+  // 隠れているときに計算すると、地図がずれた位置に動いてしまうので、何もしない
+  if (viewport.clientWidth === 0) {
+    return;
+  }
+
   // clientWidth / clientHeight … 窓の今の実際の大きさ（px）
   const x = cameraOffset(player.x * TILE_SIZE, viewport.clientWidth, MAP_WIDTH * TILE_SIZE);
   const y = cameraOffset(player.y * TILE_SIZE, viewport.clientHeight, MAP_HEIGHT * TILE_SIZE);
