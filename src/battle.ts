@@ -13,11 +13,12 @@
 // MonsterData … モンスター1種類分のデータの型（monster.ts）
 // setTextById / setBar … 文字やバーを書き換える共通の部品（ui.ts）
 // learnedSkills … 今のレベルで覚えているスキル（skills.ts）
+// type SkillData … スキル1つ分のデータの型（chooseAutoSkill の戻り値に使う） 
 import { changeScene } from "./scene";
 import { player, gainExp, getAttack, getDefense} from "./player";
 import { MONSTERS, type MonsterData } from "./monster";
 import { setTextById, setBar } from "./ui";
-import { learnedSkills, findSkill } from "./skills";
+import { learnedSkills, findSkill, type SkillData } from "./skills";
 
 // -----------------------------------------------------
 // BattleOptions … startBattle に渡すもの（field.ts の checkEncounter から来る）
@@ -68,6 +69,25 @@ function calcDamage(attack: number, defense: number): number {
 // オート戦闘
 // =====================================================
 
+// chooseAutoSkill … オートで使うスキルを選ぶ
+// 使えるスキルがなければundefined（そのときは、普通に「たたかう」）
+function chooseAutoSkill(): SkillData | undefined {
+  //ready ... 覚えていて、今すぐ使える（待ち時間が0の）スキルだけ
+  const ready = learnedSkills().filter((s) => (cooldowns[s.id] ?? 0) === 0);
+
+  // hpLow ... HPが最大HPの半分以下か（true / false)
+  const hpLow = player.hp <= (player.maxHp / 2);
+
+  // 回復スキルは、HPが減っている時だけ
+  const heal = ready.find((s) => s.type === "heal");
+  if ( heal && hpLow) {
+    return heal;
+  }
+
+  // 攻撃スキル（なければundefindが返る）
+  return ready.find((s) => s.type === "attack");
+}
+
 // scheduleAuto … オートが ON なら、少し待ってから自動で攻撃する
 //   使っている場所：startBattle（バトル開始）/ ターンの終わり / toggleAuto（ON にしたとき）
 async function scheduleAuto() {
@@ -77,7 +97,12 @@ async function scheduleAuto() {
   await wait(600);
   // 待っている間に状況が変わったかもしれないので、もう一度確かめる
   if (autoMode && inBattle && !busy) {
-    attack();   // 手で「たたかう」を押したときと同じ処理
+    const skill = chooseAutoSkill();     // 使うスキル（なければundefined）
+    if (skill) {
+      useSkill(skill.id);                // スキルを使う
+    } else {
+      attack();                          // 使えるスキルがなければ、普通に攻撃
+    }
   }
 }
 
@@ -274,9 +299,9 @@ async function useSkill(id: string) {
   cooldowns[skill.id] = skill.cooldown;       // 使ったので、待ち時間をセット
   renderSkillButtons();                       // ボタンをすぐ「つよぎり（３）にする
 
-  if (skill.type === "attack") {
+  if (skill.type === "attack") {const power = Math.floor(getAttack() * skill.power);
     // 攻撃スキル：攻撃力を power 倍にしてからダメージを計算
-    const power = Math.floor(getAttack() * skill.power);
+    
     const damage = calcDamage(power, enemy.defense);
     enemyHp = Math.max(0, enemyHp - damage);
     setTextById("battle-log", `${player.name}の${skill.name}！ ${enemy.name}に${damage}のダメージ！`);
