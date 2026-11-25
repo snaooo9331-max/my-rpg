@@ -601,3 +601,9 @@ button:disabled {
   font-size: 14px;
   padding: 10px;
 }
+
+/* スキルのボタンの場所 … 覚えているスキルが1つもなければ隠す */
+/* :empty … 中身が何もない（renderSkillButtons が "" を入れたとき） */
+.skills:empty {
+  display: none;
+}   

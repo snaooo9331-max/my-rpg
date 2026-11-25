@@ -12,10 +12,12 @@
 // MONSTERS    … モンスターの一覧（monster.ts）
 // MonsterData … モンスター1種類分のデータの型（monster.ts）
 // setTextById / setBar … 文字やバーを書き換える共通の部品（ui.ts）
+// learnedSkills … 今のレベルで覚えているスキル（skills.ts）
 import { changeScene } from "./scene";
 import { player, gainExp, getAttack, getDefense} from "./player";
 import { MONSTERS, type MonsterData } from "./monster";
 import { setTextById, setBar } from "./ui";
+import { learnedSkills } from "./skills";
 
 // -----------------------------------------------------
 // BattleOptions … startBattle に渡すもの（field.ts の checkEncounter から来る）
@@ -38,6 +40,10 @@ let enemyHp = 0;        // 敵の今のHP（敵のデータとは別に、バト
 let busy = false;       // true の間は「攻撃中・待ち時間中」。ボタン連打を受け付けない
 let autoMode = false;   // オートが ON か。バトルが終わっても覚えている（次のバトルもオートのまま）
 let inBattle = false;   // 今バトル中か。勝ち・負け・にげるが決まった瞬間に false（オートを止めるため）
+// cooldowns … スキルの id → あと何ターン待つか（対応表）
+//   例：{ strongSlash: 2 } … つよぎりはあと2ターン使えない
+//   書いていないスキルは 0（すぐに使える）として扱う
+let cooldowns: Record<string, number> = {};
 
 // -----------------------------------------------------
 // wait … 指定した時間待つ
@@ -111,6 +117,40 @@ function updateStatus() {
   document.getElementById("battle-player-hp-fill")?.classList.toggle("low", playerPercent <= 30);   // 30%以下で赤
 }
 
+// tickCooldowns … 全部のスキルの待ち時間を1つ減らす（0より下にはしない）
+//   使っている場所：nextTurn（勇者のターンが来たとき）
+function tickCooldowns() {
+  for (const skill of learnedSkills()) {
+    cooldowns[skill.id] = Math.max(0, (cooldowns[skill.id] ?? 0) - 1);
+  }
+}
+
+// renderSkillButtons … 覚えているスキルのボタンを描き直す
+//   待っているスキルは「つよぎり(2)」のように、残りのターン数を出して押せなくする
+function renderSkillButtons() {
+  const area = battleRoot?.querySelector("#skill-buttons");
+  if (!area) {
+    return;
+  }
+  area.innerHTML = learnedSkills().map((s) => {
+    const cd = cooldowns[s.id] ?? 0;
+    return `
+      <button data-skill="${s.id}" ${cd > 0 ? "disabled": ""}>
+        ${s.name}${cd > 0 ? `(${cd})` : ""}
+      </button>
+    `;
+  }).join("");
+}
+
+// nextTurn … 敵のターンが終わって、勇者のターンが来たときにやること
+//   今までは attack と run の両方に同じ2行が書いてあったので、1つにまとめる
+function nextTurn() {
+  tickCooldowns();          //待ち時間を1つ減らす
+  renderSkillButtons();     //ボタンの(2)などを更新
+  busy = false;             
+  scheduleAuto();
+}
+
 // =====================================================
 // バトルの流れ
 // =====================================================
@@ -124,6 +164,8 @@ export function startBattle(battleOptions: BattleOptions) {
   enemyHp = enemy.maxHp;                                                // 敵はHP満タンで登場
   busy = false;
   inBattle = true;
+  cooldowns = {};              // 戦闘のはじめは、全部すぐに使える
+  renderSkillButtons();        // 今のレベルで覚えているスキルのボタンを出す
 
   // 敵の画像を、そのモンスターの画像にする
   const image = battleRoot?.querySelector<HTMLImageElement>("#battle-enemy-image");
@@ -198,8 +240,7 @@ async function attack() {
 
   // 敵が生きていれば敵のターン。勇者が生き残ったら、また操作できるようにする
   if (await enemyTurn()) {
-    busy = false;
-    scheduleAuto();   // オートなら次の攻撃を予約
+    nextTurn();
   }
 }
 
@@ -214,8 +255,7 @@ async function run() {
   if (Math.random() < 0.5) {
     setTextById("battle-log", "にげられなかった！");
     if (await enemyTurn()) {   // 失敗したら敵に攻撃される
-      busy = false;
-      scheduleAuto();
+      nextTurn();
     }
     return;
   }
@@ -255,6 +295,7 @@ export function setupBattle(root: HTMLElement) {
       </div>
     </div>
     <p id="battle-log" class="window battle-log"></p>
+    <div id="skill-buttons" class="window commands skills"></div>
     <div class="window commands">
       <button id="attack-button">たたかう</button>
       <button id="run-button">にげる</button>
