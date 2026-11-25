@@ -17,7 +17,7 @@ import { changeScene } from "./scene";
 import { player, gainExp, getAttack, getDefense} from "./player";
 import { MONSTERS, type MonsterData } from "./monster";
 import { setTextById, setBar } from "./ui";
-import { learnedSkills } from "./skills";
+import { learnedSkills, findSkill } from "./skills";
 
 // -----------------------------------------------------
 // BattleOptions … startBattle に渡すもの（field.ts の checkEncounter から来る）
@@ -140,6 +140,14 @@ function renderSkillButtons() {
       </button>
     `;
   }).join("");
+
+  // ボタンを作り直すたびに、押したときの処理もつなぎ直す（menu.ts の renderSection と同じ形）
+  // 押せない（disabled の）ボタンは、押しても click が起きない
+  area.querySelectorAll<HTMLButtonElement>("[data-skill]").forEach((button) => {
+    button.addEventListener("click", () => {
+      useSkill(button.dataset.skill ?? "");
+    });
+  });
 }
 
 // nextTurn … 敵のターンが終わって、勇者のターンが来たときにやること
@@ -203,6 +211,28 @@ async function enemyTurn(): Promise<boolean> {
   return true;
 }
 
+// winBattle … 敵をたおしたあとの処理（ごほうび → レベルアップ → フィールドへ）
+//   使っている場所：attack（たたかう）/ useSkill（スキル）
+//   もともと attack の中にあったものを、そのまま移した
+async function winBattle() {
+  inBattle = false;
+  await wait(1000);
+  setTextById("battle-log", `${enemy.name}をたおした！`);
+  await wait(1000);
+
+  player.gold += enemy.gold;
+  setTextById("battle-log", `${enemy.exp}の経験値と${enemy.gold}ゴールドを手に入れた！`);
+  const levelUps = gainExp(enemy.exp);
+  for (const message of levelUps) {
+    await wait(1200);
+    setTextById("battle-log", message);
+    updateStatus();
+  }
+  await wait(1200);
+  options?.onWin();
+  changeScene("field");
+}
+
 // attack … 勇者の攻撃（「たたかう」ボタン / オート）
 //   敵を倒したら報酬をもらって onWin、倒せなければ敵のターンへ
 async function attack() {
@@ -218,27 +248,52 @@ async function attack() {
 
   // 敵を倒したとき
   if ( enemyHp <= 0) {
-    inBattle = false;
-    await wait(1000);
-    setTextById("battle-log", `${enemy.name}をたおした！`);
-    await wait(1000);
-
-    // 報酬：ゴールドと経験値（モンスターのデータから）
-    player.gold += enemy.gold;
-    setTextById("battle-log", `${enemy.exp} のけいけんちと ${enemy.gold} ゴールドをてにいれた！`);
-    const levelUps = gainExp(enemy.exp);   // レベルアップのメッセージのリスト（上がらなければ空）
-    for (const message of levelUps) {      // for…of … リストの中身を1つずつ取り出す
-      await wait(1200);
-      setTextById("battle-log", message);
-      updateStatus();
-    }
-    await wait(1200);
-    options?.onWin();      // 勝ったときの処理（field.ts が渡したもの）
-    changeScene("field");
+    await winBattle();     // await ...倒した処理が全部終わるまで待つ
     return;
   }
 
   // 敵が生きていれば敵のターン。勇者が生き残ったら、また操作できるようにする
+  if (await enemyTurn()) {
+    nextTurn();
+  }
+}
+
+// useSkill … スキルを使う（スキルのボタンを押したとき）
+//   id … 使うスキルの id（ボタンの data-skill から）
+//   流れは attack と同じ：自分の行動 → たおしたか確かめる → 敵のターン → 次のターン
+async function useSkill(id: string) {
+  if (busy) {
+    return;           // 攻撃中、待ち時間中は受け付けない
+  }
+  const skill = findSkill(id);
+  if (!skill || (cooldowns[skill.id] ?? 0) > 0) {
+    return;           // 見つからない、またはまだ使えない
+  }
+  busy = true;
+
+  cooldowns[skill.id] = skill.cooldown;       // 使ったので、待ち時間をセット
+  renderSkillButtons();                       // ボタンをすぐ「つよぎり（３）にする
+
+  if (skill.type === "attack") {
+    // 攻撃スキル：攻撃力を power 倍にしてからダメージを計算
+    const power = Math.floor(getAttack() * skill.power);
+    const damage = calcDamage(power, enemy.defense);
+    enemyHp = Math.max(0, enemyHp - damage);
+    setTextById("battle-log", `${player.name}の${skill.name}！ ${enemy.name}に${damage}のダメージ！`);
+  } else {
+    // 回復スキル：最大HPのpower%回復する。（４０なら４０％）
+    const amount = Math.floor((player.maxHp * skill.power) / 100);
+    const before = player.hp;            // 回復する前のHP（どれだけ回復したか出すため）
+    player.hp = Math.min(player.maxHp, before + amount);
+    setTextById("battle-log", `${player.name}の${skill.name}！ HPが${player.hp - before}回復した！`);
+  }
+  updateStatus();
+
+  if (enemyHp <= 0) {
+    await winBattle();
+    return;
+  }
+
   if (await enemyTurn()) {
     nextTurn();
   }
