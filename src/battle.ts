@@ -150,36 +150,154 @@ function tickCooldowns() {
   }
 }
 
-// renderSkillButtons … 覚えているスキルのボタンを描き直す
-//   待っているスキルは「つよぎり(2)」のように、残りのターン数を出して押せなくする
-function renderSkillButtons() {
-  const area = battleRoot?.querySelector("#skill-buttons");
+// =====================================================
+// 下のコマンド（3つの段階を切り替える）
+// =====================================================
+
+// CommandMode … コマンドの今の段階
+//   main   … たたかう・にげる・オート（ターンのはじめ）
+//   fight  … こうげき・スキル・もどる（「たたかう」を押したあと）
+//   skills … スキルの一覧（「スキル」を押したあと）
+type CommandMode = "main" | "fight" | "skills";
+
+// commandMode … 今どの段階を表示しているか
+let commandMode: CommandMode = "main";
+let logBeforeInfo: string | null = null;
+
+// showCommands … 段階を変えて、描き直す
+//   使っている場所：handleCommand（もどる など）/ nextTurn / startBattle / attack / useSkill
+function showCommands(mode: CommandMode) {
+  commandMode = mode;
+  // 説明を出していたら、前のメッセージに戻す
+  if (logBeforeInfo !== null) {
+    setTextById("battle-log", logBeforeInfo);
+    logBeforeInfo = null;    // 戻したので空にする
+  }
+  renderCommands();
+}
+
+// mainCommandsHtml … main の段階のボタン
+//   data-cmd … 押したときに何をするか（handleCommand で見分ける）
+//   オートのボタンは、updateAutoButton が探せるように id="auto-button" を残す
+function mainCommandsHtml(): string {
+  return `
+    <div class="commands">
+      <button data-cmd="fight">たたかう</button>
+      <button data-cmd="run">にげる</button>
+      <button id="auto-button" data-cmd="auto">オート:OFF</button>
+    </div>
+  `;
+}
+
+// fightCommandsHtml … fight の段階のボタン
+//   data-cmd="main" … もどるを押したら main の段階へ
+function fightCommandsHtml(): string {
+  return `
+    <div class="commands">
+      <button data-cmd="attack">こうげき</button>
+      <button data-cmd="skills" ${learnedSkills().length === 0 ? "disabled" : ""}>スキル</button>
+      <button data-cm="main" class="back">もどる</button>
+    </div>
+  `;
+}
+
+// skillCommandsHtml … skills の段階：覚えているスキルを2列で並べる
+//   1つのマス（skill-cell）に、スキルのボタンと「i」のボタンを横に並べる
+function skillCommandsHtml(): string {
+  const cells = learnedSkills().map((s) => {
+    const cd = cooldowns[s.id] ?? 0;           // あと何ターン待つか
+    return `
+      <div class="skill-cell">
+        <button class="skill-button" data-skill="${[s.id]}" ${cd > 0 ? "disabled" : ""}>
+        ${s.name}
+        ${cd > 0 ? `<span class="skill-wait">あと${cd}ターン</span>` : ""}
+        </button>
+        <button class="skill-info" data-info="${s.id}" aria-label="${s.name}の説明">i</button>   
+      </div>
+    `;    // aria-label … 画面の読み上げ機能が「つよぎりの説明」と読むための名前（見た目は変わらない）
+  }).join("");
+
+  return `
+    <div class="skill-grid">
+      ${cells}
+      <button data-cmd="fight" class="back wide">もどる</button>
+    </div>
+  `;
+  // もどる ... fightの段階へ。wideで2列ぶち抜きの横いっぱいにする
+}
+
+// COMMAND_HTML … 段階の名前 → そのボタンを作る関数（対応表）
+//   menu.ts の SECTIONS と同じ形
+const COMMAND_HTML: Record<CommandMode, () => string> = {
+  main: mainCommandsHtml,
+  fight: fightCommandsHtml,
+  skills: skillCommandsHtml,
+};
+
+// renderCommands … 今の段階のボタンを描いて、押したときの処理をつなぐ
+function renderCommands() {
+  const area = battleRoot?.querySelector("#commands");
   if (!area) {
     return;
   }
-  area.innerHTML = learnedSkills().map((s) => {
-    const cd = cooldowns[s.id] ?? 0;
-    return `
-      <button data-skill="${s.id}" ${cd > 0 ? "disabled": ""}>
-        ${s.name}${cd > 0 ? `(${cd})` : ""}
-      </button>
-    `;
-  }).join("");
+  area.innerHTML = COMMAND_HTML[commandMode]();
+  updateAutoButton();    //mainのとき、オートのボタンの文字と色を今の状態にあわせる（ほかの段階では何もしない）
 
-  // ボタンを作り直すたびに、押したときの処理もつなぎ直す（menu.ts の renderSection と同じ形）
-  // 押せない（disabled の）ボタンは、押しても click が起きない
+  // data-cmdのボタン（たたかう・にげる・オート・こうげき・スキル・もどる）は全部handleCommandへ
+  area.querySelectorAll<HTMLButtonElement>("[data-cmd]").forEach((button) => {
+    button.addEventListener("click", () => {
+      handleCommand(button.dataset.cmd ?? "");
+    });
+  });
+
+  // スキルのボタン（前のrenderSkillButtonsと同じ）
   area.querySelectorAll<HTMLButtonElement>("[data-skill]").forEach((button) => {
     button.addEventListener("click", () => {
       useSkill(button.dataset.skill ?? "");
     });
   });
+
+  // 「i」のボタン：メッセージ欄に説明を出すだけ（ターンは進まない）
+  area.querySelectorAll<HTMLButtonElement>("[data-info]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const skill = findSkill(button.dataset.info ?? "");
+      if (skill) {
+        // まだ覚えていなければ、今のメッセージを覚えておく
+        //   「i」を2回押したときに、説明の文を覚えてしまわないように、null のときだけ
+        if (logBeforeInfo === null) {
+          logBeforeInfo = document.getElementById("battle-log")?.textContent ?? "";
+        }
+        setTextById("battle-log", `${skill.name}：${skill.description}`);
+      }
+    });
+  });
+}
+
+// handleCommand … data-cmd のボタンを押したときの分かれ道
+//   cmd … ボタンの data-cmd の値
+function handleCommand(cmd: string) {
+  // オートは、行動中（busy）でも切り替えられるようにする
+  if (cmd === "auto") {
+    toggleAuto();
+    return;
+  }
+  if (busy) {
+    return;       // 行動中・敵のターン中は受け付けない
+  }
+  if (cmd === "atacck") {
+    attack();
+  } else if (cmd === "run") {
+    run();
+  } else if (cmd === "main" || cmd === "fight" || cmd === "skills") {
+    showCommands(cmd);      // ここに来たcmdは3つのどれかなのでCommandModeとして渡せる（型の絞り込み）
+  }
 }
 
 // nextTurn … 敵のターンが終わって、勇者のターンが来たときにやること
 //   今までは attack と run の両方に同じ2行が書いてあったので、1つにまとめる
 function nextTurn() {
   tickCooldowns();          //待ち時間を1つ減らす
-  renderSkillButtons();     //ボタンの(2)などを更新
+  showCommands("main");     //ボタンの(2)などを更新
   busy = false;             
   scheduleAuto();
 }
@@ -198,7 +316,7 @@ export function startBattle(battleOptions: BattleOptions) {
   busy = false;
   inBattle = true;
   cooldowns = {};              // 戦闘のはじめは、全部すぐに使える
-  renderSkillButtons();        // 今のレベルで覚えているスキルのボタンを出す
+  showCommands("main");        // 今のレベルで覚えているスキルのボタンを出す
 
   // 敵の画像を、そのモンスターの画像にする
   const image = battleRoot?.querySelector<HTMLImageElement>("#battle-enemy-image");
@@ -265,6 +383,7 @@ async function attack() {
     return;   // 攻撃中・待ち時間中は受け付けない（連打対策）
   }
   busy = true;
+  showCommands("main");     // こうげきを選んだら、コマンドを最初の段階に戻す
 
   const damage = calcDamage(getAttack(), enemy.defense);   // 勇者の攻撃力（装備込み）vs 敵の守備力
   enemyHp = Math.max(0, enemyHp - damage);
@@ -297,7 +416,7 @@ async function useSkill(id: string) {
   busy = true;
 
   cooldowns[skill.id] = skill.cooldown;       // 使ったので、待ち時間をセット
-  renderSkillButtons();                       // ボタンをすぐ「つよぎり（３）にする
+  showCommands("main");                       // ボタンをすぐ「つよぎり（３）にする
 
   if (skill.type === "attack") {const power = Math.floor(getAttack() * skill.power);
     // 攻撃スキル：攻撃力を power 倍にしてからダメージを計算
@@ -375,12 +494,7 @@ export function setupBattle(root: HTMLElement) {
       </div>
     </div>
     <p id="battle-log" class="window battle-log"></p>
-    <div id="skill-buttons" class="window commands skills"></div>
-    <div class="window commands">
-      <button id="attack-button">たたかう</button>
-      <button id="run-button">にげる</button>
-      <button id="auto-button">オート：OFF</button>
-    </div>
+    <div id="commands" class="window"></div>
   `;
   // battle-player … 上：勇者のLvとHP
   // battle-stage  … 真ん中：敵の画像と名前・HP
@@ -388,9 +502,5 @@ export function setupBattle(root: HTMLElement) {
   // commands      … 下：たたかう・にげる・オート
   //   id の頭に battle- を付けているのは、フィールドの id とぶつからないようにするため
 
-  // ボタンと関数をつなぐ（関数名に () を付けない＝「押されたらこの関数を呼んで」と渡す）
-  root.querySelector("#attack-button")?.addEventListener("click", attack);
-  root.querySelector("#run-button")?.addEventListener("click", run);
-  root.querySelector("#auto-button")?.addEventListener("click", toggleAuto);
-  updateAutoButton();   // 最初の表示（オート：OFF）
+  renderCommands();       //最初のコマンド（たたかう・にげる・オート）を出す
 }

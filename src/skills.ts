@@ -19,12 +19,13 @@ export type SkillData = {
     power: number;      //攻撃：攻撃力の何倍か / 回復：最大HPの何％回復するか
     cooldown: number;   //何ターンに1回使えるか（3なら、使ったあと2ターンは使えない）
     learnLevel: number; //何レベルで覚えるか
+    description: string;  //「i」を押したときに出す説明
 };
 
 // SKILLS … 全部のスキル（増やすときは、ここに1行足すだけ）
 export const SKILLS: SkillData[] = [
-    { id: "strongSlash", name: "つよぎり", type: "attack", power: 1.5, cooldown: 3, learnLevel: 3 },
-    { id: "rest", name: "いやしの風", type: "heal", power: 40, cooldown: 4, learnLevel: 5 },
+    { id: "strongSlash", name: "つよぎり", type: "attack", power: 1.5, cooldown: 3, learnLevel: 3, description: "攻撃力の1.5倍のダメージをあたえる。3ターンに1回使える" },
+    { id: "rest", name: "いやしの風", type: "heal", power: 40, cooldown: 4, learnLevel: 5, description: "最大HPの40％回復する。4ターンに1回使える" },
 ];
 // つよぎり   … 攻撃力の1.5倍のダメージ。使ったら3ターン待つ。レベル3で覚える
 // いやしの風 … 最大HPの40％回復。使ったら4ターン待つ。レベル5で覚える

@@ -602,8 +602,91 @@ button:disabled {
   padding: 10px;
 }
 
-/* スキルのボタンの場所 … 覚えているスキルが1つもなければ隠す */
-/* :empty … 中身が何もない（renderSkillButtons が "" を入れたとき） */
-.skills:empty {
-  display: none;
-}   
+/* =====================================================
+戦闘：スキルの一覧
+===================================================== */
+
+/* .skill-grid … スキルを2列に並べる */
+.skill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+}
+
+.skill-grid button {
+  margin: 0;
+}
+
+/* .skill-cell … 1マス。スキルのボタンと「i」を横に並べる
+ min-width: 0 … 名前が長くても、マスが2列の幅からはみ出さないように */
+
+.skill-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* .skill-button … スキルのボタン
+   position: relative … 中の「あと〇ターン」を、このボタンを基準に重ねるため
+   flex: 1 … 「i」の残りの幅を全部使う */
+.skill-button {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  padding: 12px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* 待っているスキルは、半透明にしない（上の「あと〇ターン」で暗くする） */
+.skill-button:disabled {
+  opacity: 1;
+}
+
+/* .skill-wait … 「あと〇ターン」。ボタンの上に重ねる
+   inset: 0 … 上下左右を 0 にして、ボタンにぴったり重ねる */
+.skill-wait {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(20, 20, 40, 0.9);
+  color: #ffffff;
+  font-size: 13px;
+}
+
+/* .skill-info … 「i」のボタン（白いふちの丸）
+   flex-shrink: 0 … 名前が長くても、つぶれないように */
+.skill-info {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* .back … 「もどる」ボタン（灰色） */
+.back {
+  background-color: #444455;
+  color: #ffffff;
+}
+
+/* .wide … グリッドの列を全部使う（1 / -1 … 最初の線から最後の線まで） */
+.wide {
+  grid-column: 1 / -1;
+}
+
+/* スキル一覧の「もどる」の大きさを、ほかのコマンドとそろえる */
+.skill-grid .back {
+  font-size: 15px;
+  padding: 12px 4px;
+}
