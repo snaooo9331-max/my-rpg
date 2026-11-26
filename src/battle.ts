@@ -196,7 +196,7 @@ function fightCommandsHtml(): string {
     <div class="commands">
       <button data-cmd="attack">こうげき</button>
       <button data-cmd="skills" ${learnedSkills().length === 0 ? "disabled" : ""}>スキル</button>
-      <button data-cm="main" class="back">もどる</button>
+      <button data-cmd="main" class="back">もどる</button>
     </div>
   `;
 }
@@ -284,7 +284,7 @@ function handleCommand(cmd: string) {
   if (busy) {
     return;       // 行動中・敵のターン中は受け付けない
   }
-  if (cmd === "atacck") {
+  if (cmd === "attack") {
     attack();
   } else if (cmd === "run") {
     run();
