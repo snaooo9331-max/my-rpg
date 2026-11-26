@@ -690,3 +690,38 @@ button:disabled {
   font-size: 15px;
   padding: 12px 4px;
 }
+
+/* =====================================================
+   メニュー：スキル画面
+   ===================================================== */
+
+/* .skill-head ... スキルの名前と、右上の小さな文を両端に置く */
+.skill-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 15px;
+}
+
+/* スキルの名前（太字） */
+.skill-name {
+  font-weight: bold;
+}
+
+/* 右上の小さな文（「4ターンに1回」「Lv3でおぼえる」「2ポイント」） */
+.skill-note {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* スキルの説明 */
+.skill-desc {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* .locked ... まだ覚えていない、レベルで覚えるスキル（薄くする） */
+.locked {
+  opacity: 0.45;
+}

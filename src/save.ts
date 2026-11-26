@@ -84,6 +84,11 @@ export function loadGame(): number | null {
     };
     delete savedPlayer.weapon;
     delete savedPlayer.armor;
+
+    // スキルポイントがまだないセーブ（この機能を作る前のデータ）なら、
+    //   今までのレベルアップの分をまとめて渡す（Lv8 なら 7 ポイント）
+    //   ??= … 左が空（undefined）のときだけ右を入れる。もう持っていれば何もしない
+    savedPlayer.skillPt ??= (savedPlayer.level ?? 1) - 1;
     
     // Object.assign … savedPlayer にある項目だけを player に上書きコピーする
     //   保存されていない項目（新しく足した項目）は、player.ts の初期値のまま残る

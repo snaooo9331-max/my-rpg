@@ -10,21 +10,23 @@
 // ITEMS / SLOTS / SLOT_TYPE / SLOT_LABELS / findItem / bonusText … 装備と枠（items.ts）
 // STAT_UPGRADES / STAT_LABELS / StatName … 強化ポイントで上げる能力（upgrades.ts）
 // deleteSave / saveGame … データを消す、すぐ保存する（save.ts）
+// SKILLS / learnedSkills / findSkill / SkillData … スキルの一覧・覚えているもの・探す・型（skills.ts）
 import { changeScene } from "./scene";
 import { player, getAttack, getDefense, canRebirth, rebirth, REBIRTH_LEVEL, expToNext } from "./player";
 import { ITEMS, SLOTS, SLOT_TYPE, SLOT_LABELS, findItem, bonusText, type ItemData, type Slot } from "./items"; 
 import { STAT_UPGRADES, STAT_LABELS, type StatName } from "./upgrades";
 import { deleteSave, saveGame } from "./save";
+import { SKILLS, learnedSkills, findSkill, type SkillData } from "./skills";
 
 // =====================================================
 // メニューの項目
 // =====================================================
 
 // MenuTab … メニューの中の画面の名前
-export type MenuTab = "status" | "equip" | "stats" | "rebirth" | "data";
+export type MenuTab = "status" | "equip" | "stats" | "skills" | "rebirth" | "data";
 
 // MENU_TABS … 最初の画面に並べる順番（リスト）
-export const MENU_TABS: MenuTab[] = ["status", "equip", "stats", "rebirth", "data"];
+export const MENU_TABS: MenuTab[] = ["status", "equip", "stats", "skills", "rebirth", "data"];
 
 // TAB_LABELS … 画面の名前 → ボタンや見出しに出す名前（対応表）
 //   項目を増やすときは MenuTab / MENU_TABS / TAB_LABELS / SECTIONS の4つに足す（赤線が教えてくれる）
@@ -32,6 +34,7 @@ export const TAB_LABELS: Record<MenuTab, string> = {
   status: "ステータス",
   equip: "そうび",
   stats: "つよさ",
+  skills: "スキル",
   rebirth: "転生",
   data: "データ",
 };
@@ -100,6 +103,13 @@ function handleItem(action: string, id: string) {
   if (action === "plus" || action === "minus") {
     changePending(id, action === "plus" ? 1 : -1);
     message = "";
+    renderMenu();
+    return;
+  }
+
+  // スキルの「おぼえる」（装備ではないので、ITEMS.find より前に処理する）
+  if (action === "learn") {
+    learnSkill(id);
     renderMenu();
     return;
   }
@@ -213,6 +223,7 @@ function statusSection(): string {
     ["次のレベルまで", `${expToNext(player.level) - player.exp}`],
     ["所持金", `${player.gold}G`],
     ["強化ポイント", `${player.statPoints}`],
+    ["スキルポイント", `${player.skillPt}`],
     ["転生回数", `${player.rebirthCount}`],
     // 8つの枠それぞれの [部位の名前, 装備の名前] を作って、... でここに広げて入れる
     ...SLOTS.map((slot): [string, string] => [SLOT_LABELS[slot], findItem(player.equipment[slot])?.name ?? "なし"]),
@@ -309,6 +320,70 @@ function statsSection(): string {
   // 何も振っていなければ「けってい」は押せない
 }
 
+// =====================================================
+// スキル
+// =====================================================
+
+// learnSkill … スキルポイントを使って、スキルを覚える（「おぼえる」ボタン）
+//   id … 覚えるスキルの id（ボタンの data-id から）
+function learnSkill(id: string) {
+  const skill = findSkill(id);
+  // 見つからない / レベルで覚えるスキル / もう覚えている ... なら何もしない
+  if (!skill || skill.cost === 0 || player.pointSkills.includes(skill.id)) {
+    return;
+  }
+  if (player.skillPt < skill.cost) {
+    message = "スキルポイントが足りない！";
+    return;
+  }
+  player.skillPt -= skill.cost;       // ポイントを使う
+  player.pointSkills.push(skill.id);
+  message = `${skill.name}をおぼえた！`;
+}
+
+// skillNote … スキルの右上に出す、小さな文
+//   s … スキル / learned … 覚えているか
+//   当てはまったらすぐ返す（itemButton と同じ「早期リターン」の形）
+function skillNote(s: SkillData, learned: boolean): string {
+  if (learned) {
+    return `${s.cooldown}ターンに1回`;    // 覚えている
+  }
+  if (s.cost === 0) {
+    return `Lv${s.learnLevel}でおぼえる`;        //レベルで覚えるスキルで、まだ覚えていない → 「Lv3でおぼえる」
+  }
+  return `${s.cost}ポイント`;        // ポイントでおぼえるスキルで、まだ覚えていない
+}
+
+// skillsSection … スキル画面
+//   覚えていないスキルも全部並べる（次に何を覚えられるかわかるように）
+function skillsSection(): string {
+  const rows = SKILLS.map((s) => {
+    const learned = learnedSkills().includes(s);       // learned … このスキルを覚えているか（true / false）
+
+    // canLearnByPoint … 「おぼえる」ボタンを出すか（まだ覚えていない、かつ、ポイントで覚えるスキル）
+    const canLearnByPoint = !learned && s.cost > 0;
+
+    return `
+      <li class="item-row ${!learned && s.cost === 0 ? "locked" : ""}">
+        <div class="skill-head">
+          <span class="skill-name">${s.name}</span>
+          <span class="skill-note">${skillNote(s, learned)}</span>
+        </div>
+        <p class="skill-desc">${s.description}</p>
+        ${canLearnByPoint ? `<button data-action="learn" data-id="${s.id}" ${player.skillPt < s.cost ? "disabled" : ""}>おぼえる</button>` : ""}
+      </li>
+    `;
+    // locked … レベルで覚えるスキルで、まだ覚えていないもの（薄く表示）
+    // 「おぼえる」は data-action="learn" なので、今までの data-action のボタンと同じく handleItem に届く
+    // スキルポイントが足りなければ "disabled"、足りていれば ""
+  }).join("");
+
+  return `
+    <h3>スキルポイント（残り ${player.skillPt}）</h3>
+    <ul class="item-list">${rows}</ul>
+  `;
+}
+
 // rebirthSection … 転生画面
 function rebirthSection(): string {
   return `
@@ -331,6 +406,7 @@ const SECTIONS: Record<MenuTab, () => string> = {
   status: statusSection,
   equip: equipSection,
   stats: statsSection,
+  skills: skillsSection,
   rebirth: rebirthSection,
   data: dataSection,
 };

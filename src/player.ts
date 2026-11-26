@@ -25,6 +25,9 @@ export type Character = {
     defense: number;       // 素の守備力（装備込みは getDefense() で計算）
     gold: number;          // 所持金
     statPoints: number;    // 強化ポイント（menu.ts の「つよさ」で使う）
+    skillPt: number;       // スキルポイント（メニューの「スキル」で使う）
+                           //    ※ skillPointsという名前はsave.tsの古いデータの引き継ぎで消されるので使わない
+    pointSkills: string[]; // ポイントで覚えたスキルのidのリスト（レベルで覚えるスキルは入れない）
     equipment: Record<Slot, string | null>;  // 枠ごとにつけている装備の id。つけていなければ null
     ownedItems: string[];  // 持っている装備の id のリスト（買うと増える）
     rebirthCount: number;  // 転生した回数
@@ -81,6 +84,8 @@ export const player: Character = {
     defense: BASE_STATS.defense,
     gold: 0,
     statPoints: 0,
+    skillPt: 0,
+    pointSkills: [],
     equipment: emptyEquipment(),   // 最初は何もつけていない
     ownedItems: [],
     rebirthCount: 0,
@@ -116,6 +121,7 @@ export function gainExp(amount: number): string[] {
         player.attack += 2;
         player.defense += 1;
         player.statPoints += 1;  // 強化ポイントを1つもらう
+        player.skillPt += 1;
         player.hp = player.maxHp;            // ごほうびでHP全回復
         messages.push(`レベルが ${player.level} にあがった！`);   // push … リストの最後に足す
     }
@@ -183,6 +189,8 @@ export function rebirth() {
     player.exp = 0;
     player.gold = 0;
     player.statPoints = 0;
+    player.skillPt = 0;
+    player.pointSkills = [];
 
     // 最初の強さ ＋ 転生ボーナス（転生1回ごとに 最大HP+10 / 攻撃力+2 / 守備力+1）
     player.maxHp = BASE_STATS.maxHp + player.rebirthCount * 10;
